@@ -3,7 +3,7 @@ use std::path::Path;
 
 use pwa_server::{
     api::route as api_route,
-    app::{app, root, state::App as AppState},
+    app::{root, route as app_route, state::App as AppState},
     auth::route as auth_route,
 };
 
@@ -57,8 +57,8 @@ async fn main() -> std::io::Result<()> {
             ))
             .app_data(app_data.clone())
             .route("/", web::get().to(root))
-            .route(pwa_path.as_str(), web::get().to(app))
-            .route("/{filename:.*}", web::get().to(app))
+            .route(pwa_path.as_str(), web::get().to(app_route))
+            .route("/{filename:.*}", web::get().to(app_route))
             .service(web::resource("/api").to(api_route))
             .service(web::resource("/auth").to(auth_route))
     })

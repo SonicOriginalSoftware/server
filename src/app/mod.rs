@@ -12,7 +12,7 @@ pub async fn root() -> impl Responder {
         .finish()
 }
 
-pub async fn app(request: HttpRequest, app_state: web::Data<App<'_>>) -> Result<NamedFile> {
+pub async fn route(request: HttpRequest, app_state: web::Data<App<'_>>) -> Result<NamedFile> {
     let path = request.match_info().query("filename");
     Ok(NamedFile::open(
         Path::new(&app_state.path).join(if path == "" { "index.html" } else { path }),
