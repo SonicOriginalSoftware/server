@@ -1,48 +1,11 @@
-use actix_files::NamedFile;
-use actix_web::{http, web, HttpRequest, HttpResponse, Responder, Result};
-use core::fmt;
-use std::path::{Path, PathBuf};
+use actix_web::web;
+use std::path::Path;
 
-struct AppState<'a> {
-    name: &'a str,
-    version: &'a str,
-    path: PathBuf,
-}
-
-impl fmt::Display for AppState<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            f,
-            "\nApp name: {}\nApp version: {}\nApp path: {}",
-            self.name,
-            self.version,
-            self.path.display()
-        )
-    }
-}
-
-async fn root() -> impl Responder {
-    HttpResponse::MovedPermanently()
-        .set_header(http::header::LOCATION, "/app")
-        .finish()
-}
-
-async fn app(request: HttpRequest, app_state: web::Data<AppState<'_>>) -> Result<NamedFile> {
-    let path = request.match_info().query("filename");
-    Ok(NamedFile::open(
-        Path::new(&app_state.path).join(if path == "" { "index.html" } else { path }),
-    )?)
-}
-
-async fn api(_request: HttpRequest) -> impl Responder {
-    println!("Received api request!");
-    HttpResponse::Ok().body("Should return with API response!")
-}
-
-async fn auth(_request: HttpRequest) -> impl Responder {
-    println!("Received auth request!");
-    HttpResponse::Ok().body("Should return with Auth response!")
-}
+use pwa_server::{
+    api::route as api_route,
+    app::{app, root, state::App as AppState},
+    auth::route as auth_route,
+};
 
 // TODO The below main function body needs the port to be configurable
 // And once that is done, it can be abstracted into a shared module
@@ -96,8 +59,8 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(root))
             .route(pwa_path.as_str(), web::get().to(app))
             .route("/{filename:.*}", web::get().to(app))
-            .service(web::resource("/api").to(api))
-            .service(web::resource("/auth").to(auth))
+            .service(web::resource("/api").to(api_route))
+            .service(web::resource("/auth").to(auth_route))
     })
     .bind(format!("{}:{}", HOST, PORT))?
     .run()
