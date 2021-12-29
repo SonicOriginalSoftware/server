@@ -15,15 +15,12 @@ async fn main() -> std::io::Result<()> {
     const HOST: &str = "localhost";
     const PORT: u32 = 8080;
 
-    let app_state = AppState::new();
-
-    println!("{}", app_state);
+    println!("{}", AppState::name());
+    println!("{}", AppState::version());
 
     println!("Starting server on {}://{}:{}...", SCHEME, HOST, PORT);
 
     // FIXME Logging not working
-
-    // let app_data = web::Data::new(app_state);
 
     HttpServer::new(move || {
         App::new()
@@ -32,9 +29,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::new(
                 middleware::normalize::TrailingSlash::MergeOnly,
             ))
-            .app_data(web::Data::new(app_state))
+            .app_data(web::Data::new(AppState::new()))
             .route("/", web::get().to(root))
-            .route(&app_state.path, web::get().to(app_route))
+            .route(&AppState::path(), web::get().to(app_route))
             .route("/{filename:.*}", web::get().to(app_route))
             .service(web::resource("/api").to(api_route))
             .service(web::resource("/auth").to(auth_route))
