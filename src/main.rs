@@ -11,14 +11,17 @@ use pwa_server::{
 async fn main() -> std::io::Result<()> {
     // TODO Server should be running on HTTP/2 over SSL/TLS
 
+    println!("{}", AppState::name());
+    println!("{}", AppState::version());
+
     const SCHEME: &str = "http";
     const HOST: &str = "localhost";
     const PORT: u32 = 8080;
 
-    println!("{}", AppState::name());
-    println!("{}", AppState::version());
+    let serve_path = AppState::path();
 
-    println!("Starting server on {}://{}:{}...", SCHEME, HOST, PORT);
+    println!("  Starting server on {}://{}:{}...", SCHEME, HOST, PORT);
+    println!("  Serving from [{}]...", serve_path);
 
     // FIXME Logging not working
 
@@ -29,9 +32,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::new(
                 middleware::normalize::TrailingSlash::MergeOnly,
             ))
-            .app_data(web::Data::new(AppState::new()))
+            .app_data(web::Data::new(AppState::new(&serve_path)))
             .route("/", web::get().to(root))
-            .route(&AppState::path(), web::get().to(app_route))
+            .route(&serve_path, web::get().to(app_route))
             .route("/{filename:.*}", web::get().to(app_route))
             .service(web::resource("/api").to(api_route))
             .service(web::resource("/auth").to(auth_route))
