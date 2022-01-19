@@ -10,7 +10,16 @@
       "request": "launch",
       "mode": "debug",
       "program": "main.go",
-      "preLaunchTask": "Build"
+      "preLaunchTask": "Build",
+      "cwd": "${input:cwd}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cwd",
+      "type": "promptString",
+      "default": "out",
+      "description": "CWD of the process"
     }
   ]
 }
