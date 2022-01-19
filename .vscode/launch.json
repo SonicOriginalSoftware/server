@@ -11,15 +11,7 @@
       "mode": "debug",
       "program": "main.go",
       "preLaunchTask": "Build",
-      "cwd": "${input:cwd}"
+      "envFile": "${workspaceFolder}/.env"
     }
   ],
-  "inputs": [
-    {
-      "id": "cwd",
-      "type": "promptString",
-      "default": "out",
-      "description": "CWD of the process"
-    }
-  ]
 }

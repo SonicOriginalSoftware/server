@@ -33,11 +33,26 @@ func (app *App) Serve() {
 
 // NewApp returns an instance of an App with sane defaults
 func NewApp() *App {
+	port, isSet := os.LookupEnv("PORT")
+	if !isSet {
+		port = "8080"
+	}
+
+	certPath, isSet := os.LookupEnv("CERT_PATH")
+	if !isSet {
+		certPath = "./cert.pem"
+	}
+
+	keyPath, isSet := os.LookupEnv("KEY_PATH")
+	if !isSet {
+		keyPath = "./key.pem"
+	}
+
 	// FIXME Yank address and certificate paths from env variables
 	app := &App{
-		address:  ":8080",
-		certPath: "./cert.pem",
-		keyPath:  "./key.pem",
+		address:  fmt.Sprintf(":%v", port),
+		certPath: fmt.Sprintf("%v", certPath),
+		keyPath:  fmt.Sprintf("%v", keyPath),
 	}
 	app.setup()
 	return app
