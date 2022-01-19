@@ -5,13 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "lldb",
+      "name": "Debug",
+      "type": "go",
       "request": "launch",
-      "name": "Debug Portal Server",
-      "program": "${workspaceFolder}/target/debug/pwa-server",
-      "preLaunchTask": "Build Debug Server",
-      "args": [],
-      "cwd": "${workspaceFolder}"
+      "mode": "debug",
+      "program": "main.go",
+      "preLaunchTask": "Build"
     }
   ]
 }
