@@ -62,7 +62,6 @@ func NewApp() *App {
 		keyPath = "./key.pem"
 	}
 
-	// FIXME Yank address and certificate paths from env variables
 	app := &App{
 		address:  fmt.Sprintf(":%v", port),
 		certPath: fmt.Sprintf("%v", certPath),
