@@ -10,7 +10,7 @@ func auth(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(os.Stdout, "Received an auth resource request!")
 }
 
-// Setup the request paths to app resources
-func Setup() {
+// Register the request paths to app resources
+func Register() {
 	http.HandleFunc("/auth", auth)
 }

@@ -18,9 +18,9 @@ type App struct {
 }
 
 func (app *App) setup() {
-	app_route.Setup()
-	api_route.Setup()
-	auth_route.Setup()
+	app_route.Register()
+	api_route.Register()
+	auth_route.Register()
 }
 
 // Serve the App
