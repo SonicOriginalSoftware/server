@@ -11,7 +11,7 @@ EXECUTABLE_VERSION := latest
 IMAGE_TAG          := $(EXECUTABLE_NAME):$(EXECUTABLE_VERSION)
 OUT_FILE           := $(OUT_DIR)/$(EXECUTABLE_NAME)
 
-all: $(OUT_FILE) certs image
+all: $(OUT_FILE) certs
 
 clean-certs:
 	$(info Cleaning cert files...)
