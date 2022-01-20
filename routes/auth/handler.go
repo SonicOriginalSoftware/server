@@ -8,6 +8,7 @@ import (
 
 func auth(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(os.Stdout, "Received an auth resource request!")
+	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
 }
 
 // Register the request paths to app resources
