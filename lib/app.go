@@ -18,20 +18,17 @@ type App struct {
 }
 
 func (app *App) setup() {
-	_, isSet := os.LookupEnv("NO_SERVE_APP")
-	if !isSet {
+	if _, isSet := os.LookupEnv("NO_SERVE_APP"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering App service...")
 		app_route.Register()
 	}
 
-	_, isSet = os.LookupEnv("NO_SERVE_API")
-	if !isSet {
+	if _, isSet := os.LookupEnv("NO_SERVE_API"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering API service...")
 		api_route.Register()
 	}
 
-	_, isSet = os.LookupEnv("NO_SERVE_AUTH")
-	if !isSet {
+	if _, isSet := os.LookupEnv("NO_SERVE_AUTH"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering Auth service...")
 		auth_route.Register()
 	}
