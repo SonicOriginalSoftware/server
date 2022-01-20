@@ -19,17 +19,20 @@ clean-certs:
 	@rm -rf $(CERT) $(KEY)
 	@echo Cleaned cert files!
 
+clean-image-cache:
+	$(info Cleaning image cache...)
+	docker buildx prune -f
+
 clean-image:
 	$(info Cleaning image...)
 	-docker rmi $(IMAGE_TAG)
-	docker buildx prune -f
 
 clean:
 	$(info Cleaning...)
 	@rm -rf $(OUT_FILE)
 	@echo Cleaned!
 
-clean-all: clean-certs clean clean-image
+clean-all: clean-certs clean clean-image clean-image-cache
 ca: clean-all
 
 $(OUT_DIR):
@@ -41,16 +44,16 @@ $(CERT) $(KEY) &: | $(OUT_DIR)
 	mv *.pem $(OUT_DIR)
 
 $(OUT_FILE): | $(OUT_DIR)
-# go build -o $(OUT_FILE) -ldflags="-extldflags=-static"
-	go build -o $(OUT_FILE) -tags 'osusergo netgo static' -buildmode=pie -ldflags '-linkmode=external -extldflags "-static-pie"'
+	go build -o $(OUT_FILE) -buildmode=pie -ldflags '-linkmode=external -extldflags "-static-pie"'
 
 certs: $(CERT) $(KEY)
 executable: $(OUT_FILE)
 
 image:
 	docker buildx build \
+	  --build-arg OUT_FILE=$(OUT_FILE) \
 	  --progress=plain \
 	  --tag $(IMAGE_TAG) \
 	  .
 
-.PHONY: clean clean-certs clean-all ca all certs executable image
+.PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all certs executable image
