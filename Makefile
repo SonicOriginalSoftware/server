@@ -46,7 +46,7 @@ $(OUT_FILE): | $(OUT_DIR)
 	go build -o $(OUT_FILE) -buildmode=pie -ldflags '-linkmode=external -extldflags "-static-pie"'
 
 certs: $(CERT) $(KEY)
-executable: $(OUT_FILE)
+image-executable: $(OUT_FILE) certs
 
 image:
 	docker buildx build \
@@ -55,4 +55,5 @@ image:
 	  --tag $(IMAGE_TAG) \
 	  .
 
-.PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all certs executable image
+.PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all certs image image-executable $(OUT_FILE)
+FORCE:

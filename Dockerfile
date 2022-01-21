@@ -7,7 +7,7 @@ FROM ${BASE_IMAGE} as prep
 
 ARG WORKDIR
 ARG USER
-ARG BUILD_DEPENDENCIES="make go gcc musl-dev file build-base"
+ARG BUILD_DEPENDENCIES="make gcc go musl-dev file"
 
 RUN apk update --no-cache \
     && apk upgrade \
@@ -27,7 +27,7 @@ ARG CGO_ENABLED=0
 
 WORKDIR ${WORKDIR}
 
-RUN make executable certs \
+RUN make image-executable \
     && ldd ${OUT_FILE} \
     && file ${OUT_FILE}
 
