@@ -1,7 +1,7 @@
 package main
 
 import (
-	lib "api-server/lib"
+	"api-server/lib"
 	"fmt"
 	"os"
 	"os/signal"
