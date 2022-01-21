@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	api_route "pwa-server/routes/api"
-	app_route "pwa-server/routes/app"
-	auth_route "pwa-server/routes/auth"
+	api_route "api-server/routes/api"
+	app_route "api-server/routes/app"
+	auth_route "api-server/routes/auth"
 )
 
 // App - the web application

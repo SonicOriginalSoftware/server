@@ -56,4 +56,3 @@ image:
 	  .
 
 .PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all certs image image-executable $(OUT_FILE)
-FORCE:
