@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 
 	api_route "api-server/routes/api"
 	app_route "api-server/routes/app"
@@ -21,16 +22,19 @@ func (app *App) setup() {
 	if _, isSet := os.LookupEnv("NO_SERVE_APP"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering App service...")
 		app_route.Register()
+		fmt.Fprintln(os.Stdout, "App service registered!")
 	}
 
 	if _, isSet := os.LookupEnv("NO_SERVE_API"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering API service...")
 		api_route.Register()
+		fmt.Fprintln(os.Stdout, "API service registered!")
 	}
 
 	if _, isSet := os.LookupEnv("NO_SERVE_AUTH"); !isSet {
 		fmt.Fprintln(os.Stdout, "Registering Auth service...")
 		auth_route.Register()
+		fmt.Fprintln(os.Stdout, "Auth service registered!")
 	}
 }
 
@@ -49,14 +53,20 @@ func NewApp() *App {
 		port = "8080"
 	}
 
+	executablePath, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not get working directory of executable!")
+	}
+	workingDirectory := path.Dir(executablePath)
+
 	certPath, isSet := os.LookupEnv("CERT_PATH")
 	if !isSet {
-		certPath = "./cert.pem"
+		certPath = fmt.Sprintf("%v/cert.pem", workingDirectory)
 	}
 
 	keyPath, isSet := os.LookupEnv("KEY_PATH")
 	if !isSet {
-		keyPath = "./key.pem"
+		keyPath = fmt.Sprintf("%v/key.pem", workingDirectory)
 	}
 
 	app := &App{
