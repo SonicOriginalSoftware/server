@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+// Handler handles App requests
+type Handler struct{}
+
 //go:embed 404.html
 var notFoundFile []byte
 
@@ -30,7 +33,8 @@ func notFound(writer http.ResponseWriter, resource string, servePath string) {
 	http.Error(writer, "Resource Not Found", http.StatusNotFound)
 }
 
-func resource(writer http.ResponseWriter, request *http.Request) {
+// ServeHTTP fulfills the http.Handler contract for Handler
+func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	resourcePath := request.URL.Path
 	if filepath.Ext(resourcePath) == "" {
 		resourcePath = fmt.Sprintf("%v/%v", strings.TrimSuffix(resourcePath, "/"), indexFileName)
@@ -53,9 +57,4 @@ func resource(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Could not write response: %v", error))
 		http.Error(writer, error.Error(), http.StatusInternalServerError)
 	}
-}
-
-// Register the request paths to app resources
-func Register() {
-	http.HandleFunc("/", resource)
 }

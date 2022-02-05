@@ -10,8 +10,6 @@
       "request": "launch",
       "mode": "debug",
       "program": "main.go",
-      "preLaunchTask": "Build",
-      "envFile": "${workspaceFolder}/.env"
     }
   ],
 }
