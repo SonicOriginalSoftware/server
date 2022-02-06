@@ -2,6 +2,7 @@ package main
 
 import (
 	"api-server/lib"
+	"api-server/lib/net"
 	"log"
 	"os"
 	"os/signal"
@@ -23,13 +24,7 @@ func main() {
 	var config *lib.Config
 
 	if config, err = lib.NewConfig(outlog, errlog); err == nil {
-		err = lib.NewRouter(
-			config.Address,
-			config.Port,
-			config.Domains,
-			outlog,
-			errlog,
-		).Serve(config)
+		err = net.NewRouter(outlog, errlog).Serve(config)
 	}
 
 	defer close(c)

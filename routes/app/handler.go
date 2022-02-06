@@ -1,6 +1,7 @@
 package app
 
 import (
+	"api-server/lib/net/env"
 	_ "embed"
 	"fmt"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+const prefix = "app"
 
 // Handler handles App requests
 type Handler struct {
@@ -61,9 +64,19 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
+// Prefix is the subdomain prefix
+func (handler *Handler) Prefix() string {
+	return prefix
+}
+
+// Address returns the address the Handler will service
+func (handler *Handler) Address() string {
+	return env.Address(handler.Prefix())
+}
+
 // NewHandler returns a new Handler
 func NewHandler(outlog, errlog *log.Logger) *Handler {
-	servePath, isSet := os.LookupEnv("SERVE_PATH")
+	servePath, isSet := os.LookupEnv("APP_SERVE_PATH")
 	if !isSet {
 		servePath = defaultServePath
 	}

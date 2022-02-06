@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"api-server/lib/net/env"
 	"log"
 	"net/http"
 )
+
+const prefix = "auth"
 
 // Handler handles Auth requests
 type Handler struct {
@@ -15,6 +18,16 @@ type Handler struct {
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	handler.outlog.Printf("Received an auth resource request!\n")
 	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
+}
+
+// Prefix is the subdomain prefix
+func (handler *Handler) Prefix() string {
+	return prefix
+}
+
+// Address returns the address the Handler will service
+func (handler *Handler) Address() string {
+	return env.Address(handler.Prefix())
 }
 
 // NewHandler returns a new Handler

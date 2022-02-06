@@ -5,35 +5,28 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 )
 
 // Config - the web application configuration
 type Config struct {
 	Address  string
 	Port     string
-	Domains  []string
-	certPath string
-	keyPath  string
+	CertPath string
+	KeyPath  string
 }
 
 // NewConfig returns an instance of an App with sane defaults
 func NewConfig(outlog *log.Logger, errlog *log.Logger) (app *Config, err error) {
-	domains := []string{"api", "app", "auth"}
-	var address, port, domainsEnv, executablePath, certPath, keyPath string
+	var address, port, executablePath, certPath, keyPath string
 
 	isSet := false
 
 	if address, isSet = os.LookupEnv("ADDRESS"); !isSet {
-		address = "localhost"
+		address = ""
 	}
 
 	if port, _ = os.LookupEnv("PORT"); !isSet {
 		port = "4430"
-	}
-
-	if domainsEnv, isSet = os.LookupEnv("DOMAINS"); isSet {
-		domains = strings.Split(domainsEnv, ",")
 	}
 
 	if executablePath, err = os.Executable(); err != nil {
@@ -54,9 +47,8 @@ func NewConfig(outlog *log.Logger, errlog *log.Logger) (app *Config, err error) 
 	app = &Config{
 		Address:  address,
 		Port:     port,
-		Domains:  domains,
-		certPath: certPath,
-		keyPath:  keyPath,
+		CertPath: certPath,
+		KeyPath:  keyPath,
 	}
 
 	return
