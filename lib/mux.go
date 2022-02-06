@@ -10,34 +10,15 @@ import (
 	"strings"
 )
 
-type muxPair struct {
-	m http.ServeMux
-	h http.Handler
-}
-
 type handlerMap map[string]http.Handler
-type muxMap map[string]muxPair
+type muxMap map[string]*http.ServeMux
 
-func newHandlerMap() (hm handlerMap) {
-	hm = handlerMap{
-		"app":  app.Handler{},
-		"api":  api.Handler{},
-		"auth": auth.Handler{},
+func newHandlerMap(outlog, errlog *log.Logger) handlerMap {
+	return handlerMap{
+		"app":  app.NewHandler(outlog, errlog),
+		"api":  api.NewHandler(outlog, errlog),
+		"auth": auth.NewHandler(outlog, errlog),
 	}
-
-	return
-}
-
-func newMuxes(routes []string) muxMap {
-	hm := newHandlerMap()
-	muxMap := make(muxMap)
-	for _, eachRoute := range routes {
-		muxMap[eachRoute] = muxPair{
-			m: *http.NewServeMux(),
-			h: hm[eachRoute],
-		}
-	}
-	return muxMap
 }
 
 // Router is a server multiplexer meant for handling multiple sub-domains
@@ -47,10 +28,8 @@ type Router struct {
 }
 
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	router.outlog.Printf("Request: %v%v", request.Host, request.URL)
-
-	if muxPair, found := router.muxes[strings.Split(request.Host, ".")[0]]; found {
-		muxPair.m.ServeHTTP(writer, request)
+	if mux, found := router.muxes[strings.Split(request.Host, ".")[0]]; found {
+		mux.ServeHTTP(writer, request)
 	} else {
 		router.errlog.Printf("\n  Could not find handler for: %v%v\n", request.Host, request.URL)
 	}
@@ -74,24 +53,26 @@ func NewRouter(
 	outlog, errlog *log.Logger,
 ) (router *Router) {
 	router = &Router{
-		muxes:  newMuxes(subdomains),
+		muxes:  make(muxMap),
 		outlog: outlog,
 		errlog: errlog,
 	}
 
-	if port != "80" && port != "443" {
-		address = fmt.Sprintf("%v:%v", address, port)
-	}
+	hm := newHandlerMap(outlog, errlog)
+	var handler http.Handler
+	route := ""
+	found := false
 
-	// FIXME This has no real reason to even be necessary
 	for _, eachSubdomain := range subdomains {
-		if muxMap, found := router.muxes[eachSubdomain]; found {
-			route := fmt.Sprintf("%v.%v", eachSubdomain, address)
-			muxMap.m.Handle(route, muxMap.h)
-			outlog.Printf("%v service registered!", eachSubdomain)
-		} else {
-			outlog.Printf("%v service handler not found!", eachSubdomain)
+		if handler, found = hm[eachSubdomain]; !found {
+			continue
 		}
+
+		router.muxes[eachSubdomain] = http.NewServeMux()
+
+		route = fmt.Sprintf("%v.%v/", eachSubdomain, address)
+		router.muxes[eachSubdomain].Handle(route, handler)
+		outlog.Printf("%v service registered for route [%v]", eachSubdomain, route)
 	}
 
 	return

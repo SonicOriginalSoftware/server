@@ -20,8 +20,9 @@ func main() {
 	}()
 
 	var err error
+	var config *lib.Config
 
-	if config, err := lib.NewConfig(outlog, errlog); err == nil {
+	if config, err = lib.NewConfig(outlog, errlog); err == nil {
 		err = lib.NewRouter(
 			config.Address,
 			config.Port,

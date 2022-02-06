@@ -3,6 +3,7 @@ package app
 import (
 	_ "embed"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,11 +11,17 @@ import (
 )
 
 // Handler handles App requests
-type Handler struct{}
+type Handler struct {
+	outlog *log.Logger
+	errlog *log.Logger
+
+	servePath string
+}
 
 //go:embed 404.html
 var notFoundFile []byte
 
+const defaultServePath = "public"
 const indexFileName = "index.html"
 const indexFileLength = len(indexFileName) - 1
 
@@ -40,21 +47,30 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 		resourcePath = fmt.Sprintf("%v/%v", strings.TrimSuffix(resourcePath, "/"), indexFileName)
 	}
 
-	fmt.Fprintf(os.Stdout, "Received an app root resource request: %v\n", resourcePath)
+	handler.outlog.Printf("Received an app resource request: %v\n", resourcePath)
 
-	servePath, isSet := os.LookupEnv("SERVE_PATH")
-	if !isSet {
-		servePath = "public"
-	}
-
-	response, error := os.ReadFile(fmt.Sprintf("%v/%v", servePath, resourcePath))
+	response, error := os.ReadFile(fmt.Sprintf("%v/%v", handler.servePath, resourcePath))
 	if error != nil {
-		notFound(writer, resourcePath, servePath)
+		notFound(writer, resourcePath, handler.servePath)
 		return
 	}
 
 	if _, error = writer.Write(response); error != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Could not write response: %v", error))
 		http.Error(writer, error.Error(), http.StatusInternalServerError)
+	}
+}
+
+// NewHandler returns a new Handler
+func NewHandler(outlog, errlog *log.Logger) *Handler {
+	servePath, isSet := os.LookupEnv("SERVE_PATH")
+	if !isSet {
+		servePath = defaultServePath
+	}
+
+	return &Handler{
+		outlog:    outlog,
+		errlog:    errlog,
+		servePath: servePath,
 	}
 }
