@@ -2,12 +2,15 @@ package git
 
 import (
 	"api-server/lib/net/env"
+	"api-server/lib/net/local"
+
 	"fmt"
 	"log"
 	"net/http"
 )
 
 const prefix = "git"
+const port = "9418"
 
 // Handler handles Git requests
 type Handler struct {
@@ -17,9 +20,8 @@ type Handler struct {
 
 func (handler *Handler) redirectAddress() string {
 	return fmt.Sprintf(
-		"%v:%v",
-		env.Address(handler.Prefix()),
-		env.Port(handler.Prefix()),
+		"%v",
+		env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path(port))),
 	)
 }
 
@@ -27,8 +29,10 @@ func (handler *Handler) redirectAddress() string {
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	handler.outlog.Printf("Received a git resource request!\n")
 
+	redirectAddress := handler.redirectAddress()
+
 	http.RedirectHandler(
-		handler.redirectAddress(),
+		redirectAddress,
 		http.StatusMovedPermanently,
 	).ServeHTTP(writer, request)
 }
@@ -40,13 +44,11 @@ func (handler *Handler) Prefix() string {
 
 // Address returns the address the Handler will service
 func (handler *Handler) Address() string {
-	return env.Address(handler.Prefix())
+	return env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path("")))
 }
 
 // NewHandler returns a new Handler
 func NewHandler(outlog, errlog *log.Logger) *Handler {
-	const gitRedirectURL = ":9418"
-
 	return &Handler{
 		outlog: outlog,
 		errlog: errlog,

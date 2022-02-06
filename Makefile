@@ -6,7 +6,7 @@ OUT_DIR            := out
 CERT               := $(OUT_DIR)/cert.pem
 KEY                := $(OUT_DIR)/key.pem
 
-EXECUTABLE_NAME    := pwa-server
+EXECUTABLE_NAME    := server
 EXECUTABLE_VERSION := latest
 IMAGE_TAG          := $(EXECUTABLE_NAME):$(EXECUTABLE_VERSION)
 OUT_FILE           := $(OUT_DIR)/$(EXECUTABLE_NAME)

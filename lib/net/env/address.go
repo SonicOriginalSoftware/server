@@ -6,21 +6,21 @@ import (
 	"strings"
 )
 
-func lookup(prefix, attribute string) (value string) {
+func lookup(prefix, attribute, def string) (value string) {
 	isSet := false
 	envName := fmt.Sprintf("%v_SERVE_%v", strings.ToUpper(prefix), attribute)
 	if value, isSet = os.LookupEnv(envName); !isSet {
-		value = ""
+		value = def
 	}
 	return
 }
 
 // Address returns the address the Handler will service
-func Address(prefix string) (address string) {
-	return lookup(prefix, "ADDRESS")
+func Address(prefix, def string) (address string) {
+	return lookup(prefix, "ADDRESS", def)
 }
 
 // Port returns the port the Handler will service
-func Port(prefix string) (address string) {
-	return lookup(prefix, "PORT")
+func Port(prefix, def string) (address string) {
+	return lookup(prefix, "PORT", def)
 }

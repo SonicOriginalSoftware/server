@@ -2,6 +2,8 @@ package app
 
 import (
 	"api-server/lib/net/env"
+	"api-server/lib/net/local"
+
 	_ "embed"
 	"fmt"
 	"log"
@@ -71,7 +73,7 @@ func (handler *Handler) Prefix() string {
 
 // Address returns the address the Handler will service
 func (handler *Handler) Address() string {
-	return env.Address(handler.Prefix())
+	return env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path("")))
 }
 
 // NewHandler returns a new Handler

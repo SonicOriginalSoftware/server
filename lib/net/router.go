@@ -45,7 +45,6 @@ func NewRouter(outlog, errlog *log.Logger) (router *Router) {
 	}
 
 	subdomains := handlers.NewSubdomainMap(outlog, errlog)
-	var handler handlers.SubdomainHandler
 	route := ""
 
 	for _, eachSubdomainHandler := range subdomains {
@@ -53,8 +52,8 @@ func NewRouter(outlog, errlog *log.Logger) (router *Router) {
 		router.muxes[prefix] = http.NewServeMux()
 
 		route = eachSubdomainHandler.Address()
-		router.muxes[prefix].Handle(route, handler)
-		outlog.Printf("%v service registered for route [%v]", eachSubdomainHandler, route)
+		router.muxes[prefix].Handle(route, eachSubdomainHandler)
+		outlog.Printf("%v service registered for route [%v]", prefix, route)
 	}
 
 	return
