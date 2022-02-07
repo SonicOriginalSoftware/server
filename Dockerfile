@@ -5,9 +5,9 @@ ARG OUT_FILE=out/service
 
 FROM ${BASE_IMAGE} as prep
 
+ARG BUILD_DEPENDENCIES="make gcc go musl-dev file"
 ARG WORKDIR
 ARG USER
-ARG BUILD_DEPENDENCIES="make gcc go musl-dev file"
 
 RUN apk update --no-cache \
     && apk upgrade \

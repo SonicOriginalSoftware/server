@@ -8,7 +8,11 @@ KEY                := $(OUT_DIR)/key.pem
 
 EXECUTABLE_NAME    := server
 EXECUTABLE_VERSION := latest
+
 IMAGE_TAG          := $(EXECUTABLE_NAME):$(EXECUTABLE_VERSION)
+
+GIT_DAEMON_TAG     := git-daemon
+
 OUT_FILE           := $(OUT_DIR)/$(EXECUTABLE_NAME)
 
 all: $(OUT_FILE) certs
@@ -53,6 +57,17 @@ image:
 	  --build-arg OUT_FILE=$(OUT_FILE) \
 	  --progress=plain \
 	  --tag $(IMAGE_TAG) \
+		-f Dockerfile \
 	  .
 
-.PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all certs image image-executable $(OUT_FILE)
+git-backend-image:
+	docker buildx build \
+	  --build-arg OUT_FILE=$(OUT_FILE) \
+	  --progress=plain \
+	  --tag $(GIT_DAEMON_TAG) \
+		-f git-backend.Dockerfile \
+	  .
+
+.PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all \
+	certs $(OUT_FILE) \
+	image image-executable git-backend-image
