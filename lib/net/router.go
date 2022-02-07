@@ -3,6 +3,7 @@ package net
 import (
 	"api-server/lib"
 	"api-server/lib/net/handlers"
+
 	"fmt"
 	"log"
 	"net/http"
@@ -21,13 +22,13 @@ func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 	if mux, found := router.muxes[strings.Split(request.Host, ".")[0]]; found {
 		mux.ServeHTTP(writer, request)
 	} else {
-		router.errlog.Printf("\n  Could not find handler for: %v%v\n", request.Host, request.URL)
+		http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
 }
 
 // Serve the mux
 func (router *Router) Serve(config *lib.Config) (err error) {
-	router.outlog.Printf("Serving on [:%v]", config.Port)
+	router.outlog.Printf("Serving on [%v:%v]", config.Address, config.Port)
 	return http.ListenAndServeTLS(
 		fmt.Sprintf("%v:%v", config.Address, config.Port),
 		config.CertPath,

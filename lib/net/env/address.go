@@ -15,12 +15,17 @@ func lookup(prefix, attribute, def string) (value string) {
 	return
 }
 
-// Address returns the address the Handler will service
+// Protocol returns the protocol of the prefixed env variable
+func Protocol(prefix, def string) (address string) {
+	return lookup(prefix, "PROTOCOL", def)
+}
+
+// Address returns the address of the prefixed env variable
 func Address(prefix, def string) (address string) {
 	return lookup(prefix, "ADDRESS", def)
 }
 
-// Port returns the port the Handler will service
+// Port returns the port of the prefixed env variable
 func Port(prefix, def string) (address string) {
 	return lookup(prefix, "PORT", def)
 }

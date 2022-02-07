@@ -1,6 +1,8 @@
 package local
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Host is a const representing a proper path for hosting locally
 const Host = "localhost"

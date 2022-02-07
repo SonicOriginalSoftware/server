@@ -3,12 +3,14 @@ package git
 import (
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
+	"strings"
 
 	"fmt"
 	"log"
 	"net/http"
 )
 
+const protocol = "https"
 const prefix = "git"
 const port = "9418"
 
@@ -18,10 +20,19 @@ type Handler struct {
 	errlog *log.Logger
 }
 
-func (handler *Handler) redirectAddress() string {
+func (handler *Handler) redirectAddress(forwardPath string) string {
 	return fmt.Sprintf(
-		"%v",
-		env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path(port))),
+		"%v://%v",
+		handler.Protocol(),
+		strings.ReplaceAll(
+			fmt.Sprintf(
+				"%v%v",
+				local.Path(port),
+				forwardPath,
+			),
+			"//",
+			"/",
+		),
 	)
 }
 
@@ -29,7 +40,7 @@ func (handler *Handler) redirectAddress() string {
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	handler.outlog.Printf("Received a git resource request!\n")
 
-	redirectAddress := handler.redirectAddress()
+	redirectAddress := handler.redirectAddress(request.URL.Path)
 
 	http.RedirectHandler(
 		redirectAddress,
@@ -40,6 +51,11 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 // Prefix is the subdomain prefix
 func (handler *Handler) Prefix() string {
 	return prefix
+}
+
+// Protocol returns the protocol the Handler will service
+func (handler *Handler) Protocol() string {
+	return env.Protocol(prefix, protocol)
 }
 
 // Address returns the address the Handler will service
