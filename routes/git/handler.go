@@ -12,7 +12,7 @@ import (
 
 const protocol = "https"
 const backend = "git_backend"
-const subdomain = "git"
+const prefix = "git"
 const port = "9418"
 
 // Handler handles Git requests
@@ -47,9 +47,9 @@ func (handler *Handler) redirectAddress(forwardPath string) (address string) {
 
 // ServeHTTP fulfills the http.Handler contract for Handler
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("Received a git resource request!\n")
-
 	redirectAddress := handler.redirectAddress(request.URL.Path)
+
+	handler.outlog.Printf("[%v] Forwarding to: [%v]!\n", prefix, redirectAddress)
 
 	http.RedirectHandler(
 		redirectAddress,
@@ -59,22 +59,22 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 
 // Prefix is the subdomain prefix
 func (handler *Handler) Prefix() string {
-	return subdomain
+	return prefix
 }
 
 // Protocol returns the protocol the Handler will service
 func (handler *Handler) Protocol() string {
-	return env.Protocol(subdomain, protocol)
+	return env.Protocol(prefix, protocol)
 }
 
 // Address returns the address the Handler will service
 func (handler *Handler) Address() string {
-	return env.Address(subdomain, fmt.Sprintf("%v.%v", subdomain, local.Path("")))
+	return env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path("")))
 }
 
 // Port returns the port of the git http backend service
 func (handler *Handler) Port() string {
-	return env.Port(subdomain, port)
+	return env.Port(prefix, port)
 }
 
 // NewHandler returns a new Handler
