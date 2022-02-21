@@ -5,20 +5,13 @@ import (
 	"api-server/lib/net"
 	"log"
 	"os"
-	"os/signal"
 )
 
 func main() {
 	outlog := log.New(os.Stdout, "", log.LstdFlags)
 	errlog := log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		outlog.Printf("Received interrupt! Exiting...\n")
-		os.Exit(0)
-	}()
+	interrupt := lib.RegisterInterrupt(outlog)
 
 	var err error
 	var config *lib.Config
@@ -27,7 +20,7 @@ func main() {
 		err = net.NewRouter(outlog, errlog).Serve(config)
 	}
 
-	defer close(c)
+	defer close(interrupt)
 
 	if err != nil {
 		errlog.Fatalf("%v", err)
