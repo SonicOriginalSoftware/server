@@ -12,17 +12,20 @@ func main() {
 	errlog := log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
 
 	interrupt := lib.RegisterInterrupt(outlog)
+	defer close(interrupt)
 
 	var err error
 	var config *lib.Config
-
-	if config, err = lib.NewConfig(outlog, errlog); err == nil {
-		err = net.NewRouter(outlog, errlog).Serve(config)
+	if config, err = lib.NewConfig(outlog, errlog); err != nil {
+		errlog.Fatalf("%v", err)
 	}
 
-	defer close(interrupt)
+	var router *net.Router
+	if router, err = net.NewRouter(outlog, errlog); err != nil {
+		errlog.Fatalf("%v", err)
+	}
 
-	if err != nil {
+	if err = router.Serve(config); err != nil {
 		errlog.Fatalf("%v", err)
 	}
 }

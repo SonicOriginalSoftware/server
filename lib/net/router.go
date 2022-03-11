@@ -38,7 +38,7 @@ func (router *Router) Serve(config *lib.Config) (err error) {
 }
 
 // NewRouter returns a new multiplexing router
-func NewRouter(outlog, errlog *log.Logger) (router *Router) {
+func NewRouter(outlog, errlog *log.Logger) (router *Router, err error) {
 	router = &Router{
 		muxes:  make(muxMap),
 		outlog: outlog,

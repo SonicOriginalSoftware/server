@@ -30,13 +30,14 @@ const defaultServePath = "public"
 const indexFileName = "index.html"
 const indexFileLength = len(indexFileName) - 1
 
-func notFound(writer http.ResponseWriter, resource string, servePath string) {
-	fmt.Fprintln(os.Stderr, fmt.Sprintf("Could not read resource at: %v", resource))
+func (handler *Handler) notFound(writer http.ResponseWriter, resource string, servePath string) {
+	handler.errlog.Printf("Could not read resource at: %v\n", resource)
 
-	if indexStartIndex := len(resource) - 1 - indexFileLength; indexStartIndex > 0 && resource[indexStartIndex:] == indexFileName {
+	indexStartIndex := len(resource) - 1 - indexFileLength
+	if indexStartIndex > 0 && resource[indexStartIndex:] == indexFileName {
 		writer.WriteHeader(http.StatusNotFound)
-		if _, error := writer.Write(notFoundFile); error != nil {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("%v", error))
+		if _, err := writer.Write(notFoundFile); err != nil {
+			handler.errlog.Printf("%v", err)
 			http.Error(writer, fmt.Sprintf("Could not retrieve %v", resource), http.StatusInternalServerError)
 		}
 		return
@@ -54,15 +55,15 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 
 	handler.outlog.Printf("Received an app resource request: %v\n", resourcePath)
 
-	response, error := os.ReadFile(fmt.Sprintf("%v/%v", handler.servePath, resourcePath))
-	if error != nil {
-		notFound(writer, resourcePath, handler.servePath)
+	response, err := os.ReadFile(fmt.Sprintf("%v/%v", handler.servePath, resourcePath))
+	if err != nil {
+		handler.notFound(writer, resourcePath, handler.servePath)
 		return
 	}
 
-	if _, error = writer.Write(response); error != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Could not write response: %v", error))
-		http.Error(writer, error.Error(), http.StatusInternalServerError)
+	if _, err = writer.Write(response); err != nil {
+		handler.errlog.Printf("Could not write response: %v", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 }
 
