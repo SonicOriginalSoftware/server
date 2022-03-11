@@ -10,6 +10,7 @@ EXECUTABLE_NAME    := server
 EXECUTABLE_VERSION := latest
 
 IMAGE_TAG          := $(EXECUTABLE_NAME):$(EXECUTABLE_VERSION)
+IMAGE_TARGET       :=
 
 GIT_TAG            := git
 GIT_TARGET         :=
@@ -54,20 +55,21 @@ $(OUT_FILE): | $(OUT_DIR)
 certs: $(CERT) $(KEY)
 image-executable: $(OUT_FILE) certs
 
-image:
-	docker buildx build \
-	  --build-arg OUT_FILE=$(OUT_FILE) \
-	  --progress=plain \
-	  --tag $(IMAGE_TAG) \
-		-f Dockerfile \
-	  .
-
 git:
 	docker buildx build \
 	  --progress=plain \
 	  --tag $(GIT_TAG) \
 		--target=$(GIT_TARGET) \
 	  - < git.Dockerfile
+
+image: git
+	docker buildx build \
+	  --build-arg OUT_FILE=$(OUT_FILE) \
+	  --progress=plain \
+	  --tag $(IMAGE_TAG) \
+		--target=$(IMAGE_TARGET) \
+		-f Dockerfile \
+	  .
 
 .PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all \
 	certs $(OUT_FILE) \

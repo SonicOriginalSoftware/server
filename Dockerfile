@@ -14,8 +14,8 @@ RUN apk update --no-cache \
   && apk add ${BUILD_DEPENDENCIES} \
   && adduser -D ${USER}
 
-WORKDIR ${WORKDIR}
 USER ${USER}
+WORKDIR ${WORKDIR}
 
 COPY --chown=${USER}:${USER} . .
 
@@ -35,5 +35,6 @@ FROM scratch
 ARG WORKDIR
 
 COPY --from=build ${WORKDIR}/out .
+COPY --from=git /git .
 
-CMD [ "/pwa-server" ]
+CMD [ "/server" ]
