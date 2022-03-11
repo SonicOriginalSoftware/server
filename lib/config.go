@@ -16,7 +16,7 @@ type Config struct {
 }
 
 // NewConfig returns an instance of an App with sane defaults
-func NewConfig(outlog *log.Logger, errlog *log.Logger) (app *Config, err error) {
+func NewConfig(outlog *log.Logger, errlog *log.Logger) (config *Config, err error) {
 	var address, port, executablePath, certPath, keyPath string
 
 	isSet := false
@@ -44,7 +44,7 @@ func NewConfig(outlog *log.Logger, errlog *log.Logger) (app *Config, err error) 
 		keyPath = fmt.Sprintf("%v/key.pem", workingDirectory)
 	}
 
-	app = &Config{
+	config = &Config{
 		Address:  address,
 		Port:     port,
 		CertPath: certPath,

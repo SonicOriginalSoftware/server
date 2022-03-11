@@ -11,10 +11,7 @@
       "mode": "debug",
       "program": "main.go",
       "envFile": "${workspaceFolder}/.env",
-      "env": {
-        // "GIT_BACKEND_SERVE_ADDRESS": "github.com",
-        // "GIT_BACKEND_SERVE_PORT": "443",
-      }
+      "env": {}
     }
   ],
 }

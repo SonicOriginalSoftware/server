@@ -3,6 +3,7 @@ package net
 import (
 	"api-server/lib"
 	"api-server/lib/net/handlers"
+	"context"
 
 	"fmt"
 	"log"
@@ -14,6 +15,7 @@ type muxMap map[string]*http.ServeMux
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
+	server         http.Server
 	muxes          muxMap
 	outlog, errlog *log.Logger
 }
@@ -26,15 +28,27 @@ func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
+// Shutdown gracefully shuts down the server (does not do any webhook notifications though)
+func (router *Router) Shutdown(ctx context.Context) {
+	router.server.Shutdown(ctx)
+}
+
 // Serve the mux
-func (router *Router) Serve(config *lib.Config) (err error) {
-	router.outlog.Printf("Serving on [%v:%v]", config.Address, config.Port)
-	return http.ListenAndServeTLS(
-		fmt.Sprintf("%v:%v", config.Address, config.Port),
-		config.CertPath,
-		config.KeyPath,
-		router,
-	)
+func (router *Router) Serve(config *lib.Config) (address string, serverError chan error) {
+	address = fmt.Sprintf("%v:%v", config.Address, config.Port)
+
+	router.server.Addr = address
+	router.server.Handler = router
+
+	serverError = make(chan error, 1)
+
+	go func() {
+		if err := router.server.ListenAndServeTLS(config.CertPath, config.KeyPath); err != nil {
+			serverError <- err
+		}
+	}()
+
+	return address, serverError
 }
 
 // NewRouter returns a new multiplexing router
