@@ -19,7 +19,7 @@ type Handler struct {
 
 // ServeHTTP fulfills the http.Handler contract for Handler
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("[%v] request received: %v\n", prefix, request.URL.Path)
+	handler.outlog.Printf("[%v] request received: %v\n", prefix, request.URL)
 	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
 }
 

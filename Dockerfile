@@ -10,26 +10,24 @@ ARG WORKDIR
 ARG USER
 
 RUN apk update --no-cache \
-    && apk upgrade \
-    && apk add ${BUILD_DEPENDENCIES} \
-    && adduser -D ${USER}
+  && apk upgrade \
+  && apk add ${BUILD_DEPENDENCIES} \
+  && adduser -D ${USER}
 
+WORKDIR ${WORKDIR}
 USER ${USER}
 
-COPY --chown=${USER}:${USER} . ${WORKDIR}
+COPY --chown=${USER}:${USER} . .
 
 
 FROM prep as build
 
-ARG WORKDIR
 ARG OUT_FILE
 ARG CGO_ENABLED=0
 
-WORKDIR ${WORKDIR}
-
 RUN make image-executable \
-    && ldd ${OUT_FILE} \
-    && file ${OUT_FILE}
+  && ldd ${OUT_FILE} \
+  && file ${OUT_FILE}
 
 
 FROM scratch

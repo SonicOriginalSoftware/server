@@ -11,7 +11,8 @@ EXECUTABLE_VERSION := latest
 
 IMAGE_TAG          := $(EXECUTABLE_NAME):$(EXECUTABLE_VERSION)
 
-GIT_DAEMON_TAG     := git-daemon
+GIT_TAG            := git
+GIT_TARGET         :=
 
 OUT_FILE           := $(OUT_DIR)/$(EXECUTABLE_NAME)
 
@@ -24,6 +25,7 @@ clean-certs:
 
 clean-image-cache:
 	$(info Cleaning image cache...)
+	docker image prune -f
 	docker buildx prune -f
 
 clean-image:
@@ -60,14 +62,13 @@ image:
 		-f Dockerfile \
 	  .
 
-git-backend-image:
+git:
 	docker buildx build \
-	  --build-arg OUT_FILE=$(OUT_FILE) \
 	  --progress=plain \
-	  --tag $(GIT_DAEMON_TAG) \
-		-f git-backend.Dockerfile \
-	  .
+	  --tag $(GIT_TAG) \
+		--target=$(GIT_TARGET) \
+	  - < git.Dockerfile
 
 .PHONY: clean clean-certs clean-all clean-image-cache clean-image ca all \
 	certs $(OUT_FILE) \
-	image image-executable git-backend-image
+	image image-executable git
