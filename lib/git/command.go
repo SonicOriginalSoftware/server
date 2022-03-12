@@ -34,11 +34,9 @@ func Execute(service string, repoPath string) (status string, err error) {
 	repoPath = strings.TrimSuffix(repoPath, infoRefsSuffix)
 
 	args := []string{trimmedService}
-
 	if trimmedService == uploadService {
 		args = append(args, uploadPackOptions...)
 	}
-
 	args = append(args, repoPath)
 
 	output, err := exec.Command(gitCommand, args...).Output()
@@ -57,7 +55,6 @@ func Execute(service string, repoPath string) (status string, err error) {
 		fmt.Sprintf("%v%v", fmt.Sprintf("%04x", len(pktLineTrailer)+5), pktLineTrailer),
 		string(output),
 	)
-	fmt.Printf("%v", status)
 
 	return
 }

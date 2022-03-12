@@ -4,6 +4,7 @@ import (
 	"api-server/lib/git"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
+	"io/ioutil"
 
 	"fmt"
 	"log"
@@ -21,7 +22,7 @@ type Handler struct {
 
 // ServeHTTP fulfills the http.Handler contract for Handler
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("[%v] request received: %v\n", prefix, request.URL)
+	handler.outlog.Printf("[%v] %v %v\n", prefix, request.Method, request.URL)
 
 	query := request.URL.Query()
 	requestedService := query.Get(queryService)
@@ -34,8 +35,12 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	writer.Header().Add("Cache-Control", "no-cache")
-	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", requestedService))
+	// TODO Do something with the body?
+	_, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		http.Error(writer, fmt.Sprintf("%v", err), http.StatusInternalServerError)
+		return
+	}
 
 	status, err := git.Execute(requestedService, request.URL.Path)
 	if err != nil {
@@ -43,10 +48,14 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	_, err = writer.Write([]byte(status))
-	if err != nil {
+	writer.Header().Add("Cache-Control", "no-cache")
+	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", requestedService))
+
+	if _, err = writer.Write([]byte(status)); err != nil {
 		handler.errlog.Printf("[%v] Error writing response: %v", prefix, err)
 	}
+
+	handler.outlog.Printf("%v", status)
 }
 
 // Prefix is the subdomain prefix
