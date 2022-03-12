@@ -1,6 +1,7 @@
 package git
 
 import (
+	"api-server/lib/git"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 
@@ -10,6 +11,7 @@ import (
 )
 
 const prefix = "git"
+const queryService = "service"
 
 // Handler handles Git requests
 type Handler struct {
@@ -20,7 +22,31 @@ type Handler struct {
 // ServeHTTP fulfills the http.Handler contract for Handler
 func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	handler.outlog.Printf("[%v] request received: %v\n", prefix, request.URL)
-	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
+
+	query := request.URL.Query()
+	requestedService := query.Get(queryService)
+	if requestedService != git.UploadService && requestedService != git.ReceiveService || requestedService == "" {
+		http.Error(
+			writer,
+			fmt.Sprintf("Invalid service request: %v", query),
+			http.StatusForbidden,
+		)
+		return
+	}
+
+	writer.Header().Add("Cache-Control", "no-cache")
+	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", requestedService))
+
+	status, err := git.Execute(requestedService, request.URL.Path)
+	if err != nil {
+		http.Error(writer, fmt.Sprintf("%v", status), http.StatusBadRequest)
+		return
+	}
+
+	_, err = writer.Write([]byte(status))
+	if err != nil {
+		handler.errlog.Printf("[%v] Error writing response: %v", prefix, err)
+	}
 }
 
 // Prefix is the subdomain prefix
