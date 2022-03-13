@@ -42,20 +42,15 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	status, err := git.Execute(requestedService, request.URL.Path)
-	if err != nil {
-		http.Error(writer, fmt.Sprintf("%v", status), http.StatusBadRequest)
-		return
-	}
-
 	writer.Header().Add("Cache-Control", "no-cache")
 	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", requestedService))
+	// writer.Header().Add("Git-Protocol", "version=2")
 
-	if _, err = writer.Write([]byte(status)); err != nil {
-		handler.errlog.Printf("[%v] Error writing response: %v", prefix, err)
+	err = git.Execute(requestedService, request.URL.Path, writer)
+	if err != nil {
+		http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		return
 	}
-
-	handler.outlog.Printf("%v", status)
 }
 
 // Prefix is the subdomain prefix

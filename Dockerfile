@@ -32,6 +32,8 @@ RUN make image-executable \
 
 FROM scratch
 
+ENV PATH=/
+
 ARG WORKDIR
 
 COPY --from=build ${WORKDIR}/out .

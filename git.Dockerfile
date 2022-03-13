@@ -30,8 +30,10 @@ FROM prep as configure
 ARG OUT_DIR
 ARG CFLAGS="-static"
 ARG NO_TCLTK=true
+ARG NO_PYTHON=true
+ARG NO_PERL=true
 
-RUN make configure && ./configure --prefix="${OUT_DIR}" --with-ssl --with-curl
+RUN make configure && ./configure --prefix="${OUT_DIR}" --with-openssl --with-curl
 
 
 FROM configure as build

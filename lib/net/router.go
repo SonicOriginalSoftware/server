@@ -20,8 +20,12 @@ type Router struct {
 	outlog, errlog *log.Logger
 }
 
+func getHostPrefix(host string) string {
+	return strings.Split(host, ".")[0]
+}
+
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if mux, found := router.muxes[strings.Split(request.Host, ".")[0]]; found {
+	if mux, found := router.muxes[getHostPrefix(request.Host)]; found {
 		mux.ServeHTTP(writer, request)
 	} else {
 		http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
