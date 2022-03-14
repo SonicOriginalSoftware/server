@@ -4,7 +4,10 @@ import (
 	"api-server/lib/git"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
+	"io"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"fmt"
 	"log"
@@ -20,37 +23,64 @@ type Handler struct {
 	errlog *log.Logger
 }
 
-// ServeHTTP fulfills the http.Handler contract for Handler
-func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("[%v] %v %v\n", prefix, request.Method, request.URL)
+func handleInfoRefsRequest(service, path string, writer http.ResponseWriter) {
+	switch service {
+	case git.ReceiveService, git.UploadService:
+		writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
 
-	query := request.URL.Query()
-	requestedService := query.Get(queryService)
-	if requestedService != git.UploadService && requestedService != git.ReceiveService || requestedService == "" {
+		if err := git.Execute(service, path, true, writer); err != nil {
+			http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		}
+	default:
 		http.Error(
 			writer,
-			fmt.Sprintf("Invalid service request: %v", query),
+			fmt.Sprintf("Invalid service request: %v", path),
 			http.StatusForbidden,
 		)
-		return
 	}
+}
 
-	// TODO Do something with the body?
-	_, err := ioutil.ReadAll(request.Body)
+func handleServiceRequest(body io.ReadCloser, service, path string, writer http.ResponseWriter) {
+	_, err := ioutil.ReadAll(body)
 	if err != nil {
 		http.Error(writer, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 		return
 	}
 
-	writer.Header().Add("Cache-Control", "no-cache")
-	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", requestedService))
-	// writer.Header().Add("Git-Protocol", "version=2")
+	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-result", service))
 
-	err = git.Execute(requestedService, request.URL.Path, writer)
-	if err != nil {
+	if err := git.Execute(service, path, false, io.MultiWriter(os.Stdout, writer)); err != nil {
 		http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
+	}
+}
+
+// ServeHTTP fulfills the http.Handler contract for Handler
+func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	handler.outlog.Printf("[%v] %v %v\n", prefix, request.Method, request.URL)
+
+	writer.Header().Add("Cache-Control", "no-cache")
+
+	path := request.URL.Path
+	if strings.HasSuffix(path, git.InfoRefsPath) {
+		handleInfoRefsRequest(request.URL.Query().Get(queryService), path, writer)
 		return
 	}
+
+	pathParts := strings.Split(path, "/")
+	service := pathParts[len(pathParts)-1]
+	path = strings.Join(pathParts[0:len(pathParts)-1], "/")
+
+	if service == git.ReceiveService || service == git.UploadService {
+		handler.outlog.Printf("[%v] %v requested for %v\n", prefix, service, path)
+		handleServiceRequest(request.Body, service, path, writer)
+		return
+	}
+
+	http.Error(
+		writer,
+		fmt.Sprintf("Invalid request: %v", path),
+		http.StatusForbidden,
+	)
 }
 
 // Prefix is the subdomain prefix

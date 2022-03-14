@@ -3,17 +3,21 @@ package git
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 )
 
 const (
-	gitCommand     = "git"
-	infoRefsSuffix = "/info/refs"
-	uploadService  = "upload-pack"
-	receiveService = "receive-pack"
-	flushPacket    = "0000"
+	// InfoRefsPath is the path used when querying discovery info
+	InfoRefsPath = "/info/refs"
+
+	flushPacket         = "0000"
+	gitCommand          = "git"
+	uploadService       = "upload-pack"
+	receiveService      = "receive-pack"
+	statelessRPCOption  = "--stateless-rpc"
+	advertiseRefsOption = "--advertise-refs"
+	pktBufferSizeLength = 5
 )
 
 var (
@@ -31,29 +35,38 @@ func init() {
 	uploadPackOptions = []string{"--stateless-rpc", "--http-backend-info-refs"}
 }
 
-func writeFlushLine(writer *io.Writer) (bytes int, err error) {
-	if bytes, err = fmt.Fprintf(*writer, "\n%v\n", flushPacket); bytes == 0 {
+func writePacketLine(writer io.Writer, service string) (bytes int, err error) {
+	pktLine := fmt.Sprintf("# service=%v", service)
+	pktLineSize := fmt.Sprintf("%04x", len(pktLine)+pktBufferSizeLength)
+
+	if bytes, err = fmt.Fprintf(writer, "%v%v\n", pktLineSize, pktLine); bytes == 0 {
+		err = fmt.Errorf("Could not write pkt-line to status buffer")
+	}
+
+	if bytes, err = fmt.Fprintf(writer, "%v", flushPacket); bytes == 0 {
 		err = fmt.Errorf("Could not write flush packet to status buffer")
 	}
 
 	return
 }
 
-func writePacketLine(writer *io.Writer, service string) (bytes int, err error) {
-	pktLine := fmt.Sprintf("# service=%v", service)
-	pktLine = fmt.Sprintf("%v%v\\n", fmt.Sprintf("%04x", len(pktLine)+5), pktLine)
+func writeServiceOutputLine(writer io.Writer, args []string) (bytes int64, err error) {
+	cmd := exec.Command(gitCommand, args...)
+	cmdPipe, err := cmd.StdoutPipe()
 
-	if bytes, err = (*writer).Write([]byte(pktLine)); bytes == 0 {
-		err = fmt.Errorf("Could not write pkt-line to status buffer")
+	if err = cmd.Start(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf(string(exitErr.Stderr))
+		}
+		return
 	}
 
-	return
-}
-
-func writeServiceOutput(writer *io.Writer, output []byte) (bytes int, err error) {
-	if bytes, err = fmt.Fprintf(*writer, "%s", output); bytes == 0 {
-		err = fmt.Errorf("Could not write output to status buffer")
+	if bytes, err = io.Copy(writer, cmdPipe); bytes <= 0 {
+		err = fmt.Errorf("Could not write service output")
+		return
 	}
+
+	err = cmd.Wait()
 
 	return
 }
@@ -61,36 +74,37 @@ func writeServiceOutput(writer *io.Writer, output []byte) (bytes int, err error)
 // Execute a git service command
 //
 // FIXME I believe the packet-line here is not performing as expected
-// See git/connect.c line 339 and git/pkt-line.c line 408
-func Execute(service string, repoPath string, statusWriter io.Writer) (err error) {
+// Rough stack trace:
+//   cmd_main (remote—curl.c)
+//   parse_fetch
+//   fetch
+//   discover_refs
+// 	 parse_git_refs
+//     discover_version (connect.c)
+//       packet_reader_peek (pkt-line.c)
+//       packet_reader_read
+//       packet_read_with_status
+// Multiple points in this that return PACKET_READ_EOF.
+// I believe we are getting through the initial case.
+// There’s another case though that I think I was able to get to
+// in certain buffer write orders, but I’m not sure why it was failing there
+func Execute(service, repoPath string, advertiseRefs bool, writer io.Writer) (err error) {
 	trimmedService := strings.TrimPrefix(service, fmt.Sprintf("%v-", gitCommand))
-	repoPath = strings.TrimSuffix(repoPath, infoRefsSuffix)
+	repoPath = strings.TrimSuffix(repoPath, InfoRefsPath)
 
 	args := []string{trimmedService}
 	if trimmedService == uploadService {
-		args = append(args, uploadPackOptions...)
+		args = append(args, statelessRPCOption)
 	}
-	args = append(args, repoPath)
+	if advertiseRefs {
+		args = append(args, advertiseRefsOption)
+	}
 
-	output, err := exec.Command(gitCommand, args...).Output()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf(string(exitErr.Stderr))
-		}
+	if _, err = writePacketLine(writer, service); err != nil {
 		return
 	}
 
-	writer := io.MultiWriter(statusWriter, os.Stdout)
-
-	if _, err = writePacketLine(&writer, service); err != nil {
-		return
-	}
-
-	if _, err = writeFlushLine(&writer); err != nil {
-		return
-	}
-
-	_, err = writeServiceOutput(&writer, output)
+	_, err = writeServiceOutputLine(writer, append(args, repoPath))
 
 	return
 }
