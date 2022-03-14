@@ -5,7 +5,6 @@ import (
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -23,33 +22,27 @@ type Handler struct {
 	errlog *log.Logger
 }
 
-func handleInfoRefsRequest(service, path string, writer http.ResponseWriter) {
+func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter) {
 	switch service {
 	case git.ReceiveService, git.UploadService:
 		writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
 
-		if err := git.Execute(service, path, true, writer); err != nil {
-			http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		if err := git.InfoRefs(service, repoPath, writer); err != nil {
+			http.Error(writer, fmt.Sprintf("%s", err), http.StatusInternalServerError)
 		}
 	default:
 		http.Error(
 			writer,
-			fmt.Sprintf("Invalid service request: %v", path),
+			fmt.Sprintf("Invalid service request: %v", repoPath),
 			http.StatusForbidden,
 		)
 	}
 }
 
-func handleServiceRequest(body io.ReadCloser, service, path string, writer http.ResponseWriter) {
-	_, err := ioutil.ReadAll(body)
-	if err != nil {
-		http.Error(writer, fmt.Sprintf("%v", err), http.StatusInternalServerError)
-		return
-	}
-
+func handleServiceRequest(body io.ReadCloser, service, repoPath string, writer http.ResponseWriter) {
 	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-result", service))
 
-	if err := git.Execute(service, path, false, io.MultiWriter(os.Stdout, writer)); err != nil {
+	if err := git.PackRequest(service, repoPath, body, io.MultiWriter(os.Stdout, writer)); err != nil {
 		http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
 	}
 }
@@ -61,18 +54,16 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 	writer.Header().Add("Cache-Control", "no-cache")
 
 	path := request.URL.Path
+
 	if strings.HasSuffix(path, git.InfoRefsPath) {
-		handleInfoRefsRequest(request.URL.Query().Get(queryService), path, writer)
+		handleInfoRefsRequest(request.URL.Query().Get(queryService), strings.TrimSuffix(path, git.InfoRefsPath), writer)
 		return
 	}
 
 	pathParts := strings.Split(path, "/")
 	service := pathParts[len(pathParts)-1]
-	path = strings.Join(pathParts[0:len(pathParts)-1], "/")
-
 	if service == git.ReceiveService || service == git.UploadService {
-		handler.outlog.Printf("[%v] %v requested for %v\n", prefix, service, path)
-		handleServiceRequest(request.Body, service, path, writer)
+		handleServiceRequest(request.Body, service, strings.Join(pathParts[0:len(pathParts)-1], "/"), writer)
 		return
 	}
 

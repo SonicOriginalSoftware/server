@@ -35,6 +35,37 @@ func init() {
 	uploadPackOptions = []string{"--stateless-rpc", "--http-backend-info-refs"}
 }
 
+func cleanUpProcess(bytesWritten int64, cmd *exec.Cmd) (err error) {
+	var errorMessage string
+	if bytesWritten <= 0 || err != nil {
+		if err := cmd.Process.Release(); err != nil {
+			errorMessage = fmt.Sprintf("could not release process: %v", err.Error())
+		}
+		if err := cmd.Process.Kill(); err != nil {
+			errorMessage = fmt.Sprintf("could not kill process: %v", err.Error())
+		}
+	}
+
+	if bytesWritten <= 0 {
+		defaultErrorMessage := "Could not write info/refs result"
+		if errorMessage != "" {
+			return fmt.Errorf("%v and %v", defaultErrorMessage, errorMessage)
+		}
+		return fmt.Errorf("%v", defaultErrorMessage)
+	} else if err != nil {
+		if errorMessage != "" {
+			return fmt.Errorf("%v and %v", err.Error(), errorMessage)
+		}
+		return
+	}
+
+	return
+}
+
+func trimRPC(fullServiceName string) string {
+	return strings.TrimPrefix(fullServiceName, fmt.Sprintf("%v-", gitCommand))
+}
+
 func writePacketLine(writer io.Writer, service string) (bytes int, err error) {
 	pktLine := fmt.Sprintf("# service=%v", service)
 	pktLineSize := fmt.Sprintf("%04x", len(pktLine)+pktBufferSizeLength)
@@ -50,9 +81,24 @@ func writePacketLine(writer io.Writer, service string) (bytes int, err error) {
 	return
 }
 
-func writeServiceOutputLine(writer io.Writer, args []string) (bytes int64, err error) {
-	cmd := exec.Command(gitCommand, args...)
+// InfoRefs returns the special info/refs file data from the requested repoPath
+func InfoRefs(service, repoPath string, writer io.Writer) (err error) {
+	if _, err = writePacketLine(writer, service); err != nil {
+		return
+	}
+
+	cmd := exec.Command(
+		gitCommand,
+		trimRPC(service),
+		statelessRPCOption,
+		advertiseRefsOption,
+		repoPath,
+	)
+
 	cmdPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return
+	}
 
 	if err = cmd.Start(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -61,50 +107,44 @@ func writeServiceOutputLine(writer io.Writer, args []string) (bytes int64, err e
 		return
 	}
 
-	if bytes, err = io.Copy(writer, cmdPipe); bytes <= 0 {
-		err = fmt.Errorf("Could not write service output")
-		return
+	bytes, err := io.Copy(writer, cmdPipe)
+	if err != nil || bytes <= 0 {
+		return cleanUpProcess(bytes, cmd)
 	}
 
-	err = cmd.Wait()
-
-	return
+	return cmd.Wait()
 }
 
-// Execute a git service command
-//
-// FIXME I believe the packet-line here is not performing as expected
-// Rough stack trace:
-//   cmd_main (remote—curl.c)
-//   parse_fetch
-//   fetch
-//   discover_refs
-// 	 parse_git_refs
-//     discover_version (connect.c)
-//       packet_reader_peek (pkt-line.c)
-//       packet_reader_read
-//       packet_read_with_status
-// Multiple points in this that return PACKET_READ_EOF.
-// I believe we are getting through the initial case.
-// There’s another case though that I think I was able to get to
-// in certain buffer write orders, but I’m not sure why it was failing there
-func Execute(service, repoPath string, advertiseRefs bool, writer io.Writer) (err error) {
-	trimmedService := strings.TrimPrefix(service, fmt.Sprintf("%v-", gitCommand))
-	repoPath = strings.TrimSuffix(repoPath, InfoRefsPath)
+// PackRequest returns upload or receive pack info for a client request
+func PackRequest(service, repoPath string, body io.Reader, writer io.Writer) (err error) {
+	cmd := exec.Command(gitCommand, trimRPC(service), statelessRPCOption, repoPath)
 
-	args := []string{trimmedService}
-	if trimmedService == uploadService {
-		args = append(args, statelessRPCOption)
-	}
-	if advertiseRefs {
-		args = append(args, advertiseRefsOption)
-	}
-
-	if _, err = writePacketLine(writer, service); err != nil {
+	outPipe, err := cmd.StdoutPipe()
+	if err != nil {
 		return
 	}
 
-	_, err = writeServiceOutputLine(writer, append(args, repoPath))
+	inPipe, err := cmd.StdinPipe()
+	if err != nil {
+		return
+	}
 
-	return
+	if err = cmd.Start(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf(string(exitErr.Stderr))
+		}
+		return
+	}
+
+	bytes, err := io.Copy(inPipe, body)
+	if err != nil || bytes <= 0 {
+		return cleanUpProcess(bytes, cmd)
+	}
+
+	bytes, err = io.Copy(writer, outPipe)
+	if err != nil || bytes <= 0 {
+		return cleanUpProcess(bytes, cmd)
+	}
+
+	return cmd.Wait()
 }
