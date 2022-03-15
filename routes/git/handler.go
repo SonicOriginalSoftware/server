@@ -5,7 +5,6 @@ import (
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 	"io"
-	"os"
 	"strings"
 
 	"fmt"
@@ -42,7 +41,7 @@ func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter)
 func handleServiceRequest(body io.ReadCloser, service, repoPath string, writer http.ResponseWriter) {
 	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-result", service))
 
-	if err := git.PackRequest(service, repoPath, body, io.MultiWriter(os.Stdout, writer)); err != nil {
+	if err := git.PackRequest(service, repoPath, body, writer); err != nil {
 		http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
 	}
 }
