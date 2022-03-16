@@ -22,19 +22,19 @@ type Handler struct {
 }
 
 func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter) {
-	switch service {
-	case git.ReceiveService, git.UploadService:
-		writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
-
-		if err := git.InfoRefs(service, repoPath, writer); err != nil {
-			http.Error(writer, fmt.Sprintf("%s", err), http.StatusInternalServerError)
-		}
-	default:
+	if service != git.UploadService && service != git.ReceiveService {
 		http.Error(
 			writer,
 			fmt.Sprintf("Invalid service request: %v", repoPath),
 			http.StatusForbidden,
 		)
+		return
+	}
+
+	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
+
+	if err := git.InfoRefs(service, repoPath, writer); err != nil {
+		http.Error(writer, fmt.Sprintf("%s", err), http.StatusInternalServerError)
 	}
 }
 
@@ -55,14 +55,23 @@ func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Reque
 	path := request.URL.Path
 
 	if strings.HasSuffix(path, git.InfoRefsPath) {
-		handleInfoRefsRequest(request.URL.Query().Get(queryService), strings.TrimSuffix(path, git.InfoRefsPath), writer)
+		handleInfoRefsRequest(
+			request.URL.Query().Get(queryService),
+			strings.TrimSuffix(path, git.InfoRefsPath),
+			writer,
+		)
 		return
 	}
 
 	pathParts := strings.Split(path, "/")
 	service := pathParts[len(pathParts)-1]
 	if service == git.ReceiveService || service == git.UploadService {
-		handleServiceRequest(request.Body, service, strings.Join(pathParts[0:len(pathParts)-1], "/"), writer)
+		handleServiceRequest(
+			request.Body,
+			service,
+			strings.Join(pathParts[0:len(pathParts)-1], "/"),
+			writer,
+		)
 		return
 	}
 
