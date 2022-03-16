@@ -5,6 +5,8 @@ import (
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 	"io"
+	"os"
+	"os/exec"
 	"strings"
 
 	"fmt"
@@ -21,28 +23,47 @@ type Handler struct {
 	errlog *log.Logger
 }
 
+func handleError(writer http.ResponseWriter, errCode int, err error) {
+	writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	writer.WriteHeader(errCode)
+
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		err = fmt.Errorf(string(exitErr.Stderr))
+	}
+
+	bytes, err := fmt.Fprintf(io.MultiWriter(writer, os.Stderr), "%s", err)
+	if bytes <= 0 || err != nil {
+		if bytes <= 0 {
+			err = fmt.Errorf("Could not write error to error writer")
+		}
+		log.Fatalf("%v", err)
+	}
+}
+
 func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter) {
 	if service != git.UploadService && service != git.ReceiveService {
-		http.Error(
+		handleError(
 			writer,
-			fmt.Sprintf("Invalid service request: %v", repoPath),
 			http.StatusForbidden,
+			fmt.Errorf("Invalid service request: %v", repoPath),
 		)
 		return
 	}
 
-	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
+	writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
 
-	if err := git.InfoRefs(service, repoPath, writer); err != nil {
-		http.Error(writer, fmt.Sprintf("%s", err), http.StatusInternalServerError)
+	if cancel, err := git.InfoRefs(service, repoPath, writer); err != nil {
+		defer cancel()
+		handleError(writer, http.StatusInternalServerError, err)
 	}
 }
 
 func handleServiceRequest(body io.ReadCloser, service, repoPath string, writer http.ResponseWriter) {
-	writer.Header().Add("Content-Type", fmt.Sprintf("application/x-%v-result", service))
+	writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-result", service))
 
-	if err := git.PackRequest(service, repoPath, body, writer); err != nil {
-		http.Error(writer, fmt.Sprintf("%s", err), http.StatusBadRequest)
+	if cancel, err := git.PackRequest(service, repoPath, body, writer); err != nil {
+		defer cancel()
+		handleError(writer, http.StatusBadRequest, err)
 	}
 }
 
