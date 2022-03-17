@@ -27,7 +27,7 @@ func handleError(writer http.ResponseWriter, errCode int, err error) {
 	writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	writer.WriteHeader(errCode)
 
-	if exitErr, ok := err.(*exec.ExitError); ok {
+	if exitErr, ok := err.(*exec.ExitError); ok && len(exitErr.Stderr) > 0 {
 		err = fmt.Errorf(string(exitErr.Stderr))
 	}
 
@@ -61,8 +61,8 @@ func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter)
 func handleServiceRequest(body io.ReadCloser, service, repoPath string, writer http.ResponseWriter) {
 	writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-result", service))
 
-	if cancel, err := git.PackRequest(service, repoPath, body, writer); err != nil {
-		defer cancel()
+	if _, err := git.PackRequest(service, repoPath, body, io.MultiWriter(writer, os.Stderr)); err != nil {
+		// defer cancel()
 		handleError(writer, http.StatusBadRequest, err)
 	}
 }
