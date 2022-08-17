@@ -56,7 +56,7 @@ func (handler *Handler) uploadPack(
 	}
 
 	uploadResponse, err := uploadPackSession.UploadPack(context, uploadPackRequest)
-	if err != nil {
+	if err != nil || uploadResponse == nil {
 		return
 	}
 
