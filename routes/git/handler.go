@@ -41,16 +41,17 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Add("Cache-Control", "no-cache")
 
 	path := request.URL.Path
+	err := fmt.Errorf("Invalid request: %v", path)
+
 	pathParts := strings.Split(path, "/")
 	service := pathParts[len(pathParts)-1]
-
-	err := fmt.Errorf("Invalid request: %v", path)
 
 	if service != receiveService && service != uploadService && service != infoRefsService {
 		handler.handleError(writer, http.StatusForbidden, err)
 		return
 	}
 
+	serviceQuery := request.URL.Query().Get("service")
 	repoPath := strings.Join(pathParts[0:len(pathParts)-2], "/")
 	endpoint := fmt.Sprintf("%v://%v%v", "https", request.Host, repoPath)
 	transportEndpoint, err := transport.NewEndpoint(endpoint)
@@ -61,12 +62,11 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 	switch service {
 	case infoRefsService:
-		writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
+		writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-advertisement", serviceQuery))
 		var session transport.UploadPackSession
 		if session, err = handler.server.NewUploadPackSession(transportEndpoint, nil); err == nil {
 			var refs *packp.AdvRefs
-			refs, err = session.AdvertisedReferencesContext(request.Context())
-			if err == nil {
+			if refs, err = session.AdvertisedReferencesContext(request.Context()); err == nil {
 				refs.Prefix = [][]byte{[]byte("# service=git-upload-pack"), pktline.Flush}
 				err = refs.Encode(writer)
 			}
