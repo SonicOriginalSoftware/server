@@ -1,3 +1,5 @@
+//revive:disable:package-comments
+
 package local
 
 import (

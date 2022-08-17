@@ -1,3 +1,5 @@
+//revive:disable:package-comments
+
 package lib
 
 import (
@@ -16,7 +18,7 @@ type Config struct {
 }
 
 // NewConfig returns an instance of an App with sane defaults
-func NewConfig(outlog *log.Logger, errlog *log.Logger) (config *Config, err error) {
+func NewConfig(_ *log.Logger, errlog *log.Logger) (config *Config, err error) {
 	var address, port, executablePath, certPath, keyPath string
 
 	isSet := false
@@ -25,12 +27,12 @@ func NewConfig(outlog *log.Logger, errlog *log.Logger) (config *Config, err erro
 		address = ""
 	}
 
-	if port, _ = os.LookupEnv("PORT"); !isSet {
+	if port, isSet = os.LookupEnv("PORT"); !isSet {
 		port = "4430"
 	}
 
 	if executablePath, err = os.Executable(); err != nil {
-		errlog.Printf("Could not get working directory of executable!")
+		errlog.Printf("Could not get working directory of executable!\n")
 		return
 	}
 

@@ -1,3 +1,5 @@
+//revive:disable:package-comments
+
 package net
 
 import (
@@ -20,12 +22,11 @@ type Router struct {
 	outlog, errlog *log.Logger
 }
 
-func getHostPrefix(host string) string {
-	return strings.Split(host, ".")[0]
-}
-
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if mux, found := router.muxes[getHostPrefix(request.Host)]; found {
+	hostPrefix := strings.Split(request.Host, ".")[0]
+
+	if mux, found := router.muxes[hostPrefix]; found {
+		router.outlog.Printf("[%v] %v %v\n", hostPrefix, request.Method, request.URL)
 		mux.ServeHTTP(writer, request)
 	} else {
 		http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
@@ -33,8 +34,8 @@ func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 }
 
 // Shutdown gracefully shuts down the server (does not do any webhook notifications though)
-func (router *Router) Shutdown(ctx context.Context) {
-	router.server.Shutdown(ctx)
+func (router *Router) Shutdown(ctx context.Context) error {
+	return router.server.Shutdown(ctx)
 }
 
 // Serve the mux

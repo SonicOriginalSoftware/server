@@ -37,6 +37,5 @@ ENV PATH=/
 ARG WORKDIR
 
 COPY --from=build ${WORKDIR}/out .
-COPY --from=git /git .
 
 CMD [ "/server" ]

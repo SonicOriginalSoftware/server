@@ -1,106 +1,95 @@
+//revive:disable:package-comments
+
 package git
 
 import (
-	"api-server/lib/git"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
-	"io"
-	"os"
-	"os/exec"
 	"strings"
 
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/go-git/go-git/v5/plumbing/format/pktline"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	go_git "github.com/go-git/go-git/v5/plumbing/transport/server"
 )
 
 const prefix = "git"
-const queryService = "service"
+const infoRefsService = "refs"
+const receiveService = "receive-pack"
+const uploadService = "upload-pack"
 
 // Handler handles Git requests
 type Handler struct {
 	outlog *log.Logger
 	errlog *log.Logger
+	server transport.Transport
 }
 
-func handleError(writer http.ResponseWriter, errCode int, err error) {
+func (handler *Handler) handleError(writer http.ResponseWriter, errCode int, err error) {
 	writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	writer.WriteHeader(errCode)
 
-	if exitErr, ok := err.(*exec.ExitError); ok && len(exitErr.Stderr) > 0 {
-		err = fmt.Errorf(string(exitErr.Stderr))
-	}
-
-	bytes, err := fmt.Fprintf(io.MultiWriter(writer, os.Stderr), "%s", err)
-	if bytes <= 0 || err != nil {
-		if bytes <= 0 {
-			err = fmt.Errorf("Could not write error to error writer")
-		}
-		log.Fatalf("%v", err)
-	}
-}
-
-func handleInfoRefsRequest(service, repoPath string, writer http.ResponseWriter) {
-	if service != git.UploadService && service != git.ReceiveService {
-		handleError(
-			writer,
-			http.StatusForbidden,
-			fmt.Errorf("Invalid service request: %v", repoPath),
-		)
-		return
-	}
-
-	writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
-
-	if cancel, err := git.InfoRefs(service, repoPath, writer); err != nil {
-		defer cancel()
-		handleError(writer, http.StatusInternalServerError, err)
-	}
-}
-
-func handleServiceRequest(body io.ReadCloser, service, repoPath string, writer http.ResponseWriter) {
-	writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-result", service))
-
-	if _, err := git.PackRequest(service, repoPath, body, io.MultiWriter(writer, os.Stderr)); err != nil {
-		// defer cancel()
-		handleError(writer, http.StatusBadRequest, err)
-	}
+	handler.errlog.Printf("%s", err)
+	http.Error(writer, err.Error(), errCode)
 }
 
 // ServeHTTP fulfills the http.Handler contract for Handler
-func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("[%v] %v %v\n", prefix, request.Method, request.URL)
-
+func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Add("Cache-Control", "no-cache")
 
 	path := request.URL.Path
-
-	if strings.HasSuffix(path, git.InfoRefsPath) {
-		handleInfoRefsRequest(
-			request.URL.Query().Get(queryService),
-			strings.TrimSuffix(path, git.InfoRefsPath),
-			writer,
-		)
-		return
-	}
-
 	pathParts := strings.Split(path, "/")
 	service := pathParts[len(pathParts)-1]
-	if service == git.ReceiveService || service == git.UploadService {
-		handleServiceRequest(
-			request.Body,
-			service,
-			strings.Join(pathParts[0:len(pathParts)-1], "/"),
-			writer,
-		)
+
+	err := fmt.Errorf("Invalid request: %v", path)
+
+	if service != receiveService && service != uploadService && service != infoRefsService {
+		handler.handleError(writer, http.StatusForbidden, err)
 		return
 	}
 
-	http.Error(
-		writer,
-		fmt.Sprintf("Invalid request: %v", path),
-		http.StatusForbidden,
-	)
+	repoPath := strings.Join(pathParts[0:len(pathParts)-2], "/")
+	endpoint := fmt.Sprintf("%v://%v%v", "https", request.Host, repoPath)
+	transportEndpoint, err := transport.NewEndpoint(endpoint)
+	if err != nil {
+		handler.handleError(writer, http.StatusBadRequest, err)
+		return
+	}
+
+	switch service {
+	case infoRefsService:
+		writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-advertisement", service))
+		var session transport.UploadPackSession
+		if session, err = handler.server.NewUploadPackSession(transportEndpoint, nil); err == nil {
+			var refs *packp.AdvRefs
+			refs, err = session.AdvertisedReferencesContext(request.Context())
+			if err == nil {
+				refs.Prefix = [][]byte{[]byte("# service=git-upload-pack"), pktline.Flush}
+				err = refs.Encode(writer)
+			}
+		}
+	case receiveService:
+		writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-result", service))
+		var session transport.ReceivePackSession
+		if session, err = handler.server.NewReceivePackSession(transportEndpoint, nil); err == nil {
+			receivePackRequest := packp.NewReferenceUpdateRequest()
+			session.ReceivePack(request.Context(), receivePackRequest)
+		}
+	case uploadService:
+		writer.Header().Set("Content-Type", fmt.Sprintf("application/x-%v-result", service))
+		var session transport.UploadPackSession
+		if session, err = handler.server.NewUploadPackSession(transportEndpoint, nil); err == nil {
+			uploadPackRequest := packp.NewUploadPackRequest()
+			session.UploadPack(request.Context(), uploadPackRequest)
+		}
+	}
+
+	if err != nil {
+		handler.handleError(writer, http.StatusBadRequest, err)
+	}
 }
 
 // Prefix is the subdomain prefix
@@ -118,5 +107,6 @@ func NewHandler(outlog, errlog *log.Logger) *Handler {
 	return &Handler{
 		outlog: outlog,
 		errlog: errlog,
+		server: go_git.DefaultServer,
 	}
 }

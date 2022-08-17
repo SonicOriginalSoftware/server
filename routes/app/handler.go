@@ -1,3 +1,5 @@
+//revive:disable:package-comments
+
 package app
 
 import (
@@ -47,13 +49,11 @@ func (handler *Handler) notFound(writer http.ResponseWriter, resource string, se
 }
 
 // ServeHTTP fulfills the http.Handler contract for Handler
-func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	resourcePath := request.URL.Path
 	if filepath.Ext(resourcePath) == "" {
 		resourcePath = fmt.Sprintf("%v/%v", strings.TrimSuffix(resourcePath, "/"), indexFileName)
 	}
-
-	handler.outlog.Printf("[%v] request received: %v\n", prefix, request.URL)
 
 	response, err := os.ReadFile(fmt.Sprintf("%v/%v", handler.servePath, resourcePath))
 	if err != nil {

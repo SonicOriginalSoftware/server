@@ -1,3 +1,5 @@
+//revive:disable:package-comments
+
 package api
 
 import (
@@ -18,8 +20,7 @@ type Handler struct {
 }
 
 // ServeHTTP fulfills the http.Handler contract for Handler
-func (handler Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	handler.outlog.Printf("[%v] %v\n", prefix, request.URL.Path)
+func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
 }
 
