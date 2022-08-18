@@ -3,6 +3,7 @@
 package app
 
 import (
+	"api-server/lib/logging"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 
@@ -78,15 +79,15 @@ func (handler *Handler) Address() string {
 }
 
 // NewHandler returns a new Handler
-func NewHandler(outlog, errlog *log.Logger) *Handler {
+func NewHandler() *Handler {
 	servePath, isSet := os.LookupEnv("APP_SERVE_PATH")
 	if !isSet {
 		servePath = defaultServePath
 	}
 
 	return &Handler{
-		outlog:    outlog,
-		errlog:    errlog,
+		outlog:    logging.NewLog(prefix),
+		errlog:    logging.NewError(prefix),
 		servePath: servePath,
 	}
 }

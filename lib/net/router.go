@@ -3,7 +3,8 @@
 package net
 
 import (
-	"api-server/lib"
+	"api-server/lib/config"
+	"api-server/lib/logging"
 	"api-server/lib/net/handlers"
 	"context"
 
@@ -12,6 +13,8 @@ import (
 	"net/http"
 	"strings"
 )
+
+const prefix = "router"
 
 type muxMap map[string]*http.ServeMux
 
@@ -26,7 +29,7 @@ func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 	hostPrefix := strings.Split(request.Host, ".")[0]
 
 	if mux, found := router.muxes[hostPrefix]; found {
-		router.outlog.Printf("[%v] %v %v\n", hostPrefix, request.Method, request.URL)
+		router.outlog.Printf("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
 		mux.ServeHTTP(writer, request)
 	} else {
 		http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
@@ -39,7 +42,7 @@ func (router *Router) Shutdown(ctx context.Context) error {
 }
 
 // Serve the mux
-func (router *Router) Serve(config *lib.Config) (address string, serverError chan error) {
+func (router *Router) Serve(config *config.Config) (address string, serverError chan error) {
 	address = fmt.Sprintf("%v:%v", config.Address, config.Port)
 
 	router.server.Addr = address
@@ -57,16 +60,17 @@ func (router *Router) Serve(config *lib.Config) (address string, serverError cha
 }
 
 // NewRouter returns a new multiplexing router
-func NewRouter(outlog, errlog *log.Logger) (router *Router, err error) {
+func NewRouter(subdomains []handlers.SubdomainHandler) (router *Router, err error) {
+	outlog := logging.NewLog(prefix)
+	errlog := logging.NewError(prefix)
+
 	router = &Router{
 		muxes:  make(muxMap),
 		outlog: outlog,
 		errlog: errlog,
 	}
 
-	subdomains := handlers.NewSubdomainMap(outlog, errlog)
 	route := ""
-
 	for _, eachSubdomainHandler := range subdomains {
 		prefix := eachSubdomainHandler.Prefix()
 		router.muxes[prefix] = http.NewServeMux()

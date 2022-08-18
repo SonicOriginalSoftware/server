@@ -3,6 +3,7 @@
 package auth
 
 import (
+	"api-server/lib/logging"
 	"api-server/lib/net/env"
 	"api-server/lib/net/local"
 
@@ -35,9 +36,9 @@ func (handler *Handler) Address() string {
 }
 
 // NewHandler returns a new Handler
-func NewHandler(outlog, errlog *log.Logger) *Handler {
+func NewHandler() *Handler {
 	return &Handler{
-		outlog: outlog,
-		errlog: errlog,
+		outlog: logging.NewLog(prefix),
+		errlog: logging.NewError(prefix),
 	}
 }
