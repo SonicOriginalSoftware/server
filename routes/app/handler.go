@@ -3,9 +3,9 @@
 package app
 
 import (
-	"api-server/lib/logging"
-	"api-server/lib/net/env"
-	"api-server/lib/net/local"
+	"server/lib/env"
+	"server/lib/logging"
+	"server/lib/net/local"
 
 	_ "embed"
 	"fmt"
@@ -34,13 +34,13 @@ const indexFileName = "index.html"
 const indexFileLength = len(indexFileName) - 1
 
 func (handler *Handler) notFound(writer http.ResponseWriter, resource string, servePath string) {
-	handler.errlog.Printf("[%v] Could not read resource at: %v\n", prefix, resource)
+	handler.errlog.Printf("Could not read resource at: %v\n", resource)
 
 	indexStartIndex := len(resource) - 1 - indexFileLength
 	if indexStartIndex > 0 && resource[indexStartIndex:] == indexFileName {
 		writer.WriteHeader(http.StatusNotFound)
 		if _, err := writer.Write(notFoundFile); err != nil {
-			handler.errlog.Printf("[%v] %v", prefix, err)
+			handler.errlog.Printf("%v", err)
 			http.Error(writer, fmt.Sprintf("Could not retrieve %v", resource), http.StatusInternalServerError)
 		}
 		return
@@ -63,7 +63,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 
 	if _, err = writer.Write(response); err != nil {
-		handler.errlog.Printf("[%v] Could not write response: %v", prefix, err)
+		handler.errlog.Printf("Could not write response: %v", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 }

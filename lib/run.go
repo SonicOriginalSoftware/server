@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/signal"
 
-	"api-server/lib/config"
-	"api-server/lib/logging"
-	"api-server/lib/net"
-	"api-server/lib/net/handlers"
+	"server/lib/config"
+	"server/lib/handlers"
+	"server/lib/logging"
+	"server/lib/router"
 )
 
 // Run executes the main program loop
@@ -24,13 +24,13 @@ func Run(subdomains []handlers.SubdomainHandler) (code int) {
 	signal.Notify(interrupt, os.Interrupt)
 	defer close(interrupt)
 
-	config, err := config.NewConfig(outlog, errlog)
+	config, err := config.New(outlog, errlog)
 	if err != nil {
 		errlog.Printf("%v\n", err)
 		return
 	}
 
-	router, err := net.NewRouter(subdomains)
+	router, err := router.New(subdomains)
 	if err != nil {
 		errlog.Printf("%v\n", err)
 		return

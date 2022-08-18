@@ -1,12 +1,12 @@
 //revive:disable:package-comments
 
-package net
+package router
 
 import (
-	"api-server/lib/config"
-	"api-server/lib/logging"
-	"api-server/lib/net/handlers"
 	"context"
+	"server/lib/config"
+	"server/lib/handlers"
+	"server/lib/logging"
 
 	"fmt"
 	"log"
@@ -59,8 +59,8 @@ func (router *Router) Serve(config *config.Config) (address string, serverError 
 	return address, serverError
 }
 
-// NewRouter returns a new multiplexing router
-func NewRouter(subdomains []handlers.SubdomainHandler) (router *Router, err error) {
+// New returns a new multiplexing router
+func New(subdomains []handlers.SubdomainHandler) (router *Router, err error) {
 	outlog := logging.NewLog(prefix)
 	errlog := logging.NewError(prefix)
 

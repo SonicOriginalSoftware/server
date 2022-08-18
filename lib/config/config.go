@@ -17,8 +17,8 @@ type Config struct {
 	KeyPath  string
 }
 
-// NewConfig returns an instance of an App with sane defaults
-func NewConfig(_ *log.Logger, errlog *log.Logger) (config *Config, err error) {
+// New returns a Config instance of an App with sane defaults
+func New(_ *log.Logger, errlog *log.Logger) (config *Config, err error) {
 	var address, port, executablePath, certPath, keyPath string
 
 	isSet := false

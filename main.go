@@ -3,13 +3,13 @@
 package main
 
 import (
-	"api-server/lib"
-	"api-server/lib/net/handlers"
-	"api-server/routes/api"
-	"api-server/routes/app"
-	"api-server/routes/auth"
-	"api-server/routes/git"
 	"os"
+	"server/lib"
+	"server/lib/handlers"
+	"server/routes/api"
+	"server/routes/app"
+	"server/routes/auth"
+	"server/routes/git"
 )
 
 func main() {

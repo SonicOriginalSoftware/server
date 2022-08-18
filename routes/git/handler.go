@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"strings"
 
-	"api-server/lib/logging"
-	"api-server/lib/net/env"
-	"api-server/lib/net/local"
+	"server/lib/env"
+	"server/lib/logging"
+	"server/lib/net/local"
 
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
