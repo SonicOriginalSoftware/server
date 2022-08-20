@@ -1,6 +1,6 @@
 //revive:disable:package-comments
 
-package auth
+package grpc
 
 import (
 	"server/env"
@@ -12,9 +12,9 @@ import (
 	"net/http"
 )
 
-const prefix = "auth"
+const prefix = "grpc"
 
-// Handler handles Auth requests
+// Handler handles GRPC API requests
 type Handler struct {
 	outlog *log.Logger
 	errlog *log.Logger

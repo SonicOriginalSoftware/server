@@ -4,6 +4,7 @@ package graphql
 
 import (
 	"server/env"
+	"server/graphql"
 	"server/logging"
 	"server/net/local"
 
@@ -11,9 +12,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
-	"github.com/graphql-go/graphql"
+	go_graphql "github.com/graphql-go/graphql"
 )
 
 const prefix = "graphql"
@@ -24,28 +24,23 @@ type postData struct {
 	Operation string                 `json:"operation"`
 }
 
-// define schema, with our rootQuery and rootMutation
-var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-	Query:    &graphql.Object{},
-	Mutation: &graphql.Object{},
-})
-
 // Handler handles GraphQL API requests
 type Handler struct {
 	outlog *log.Logger
 	errlog *log.Logger
 }
 
-func (handler *Handler) handleGraphQL(writer http.ResponseWriter, request *http.Request) {
+// ServeHTTP fulfills the http.Handler contract for Handler
+func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	var jsonData postData
 	if err := json.NewDecoder(request.Body).Decode(&jsonData); err != nil {
 		writer.WriteHeader(400)
 		return
 	}
 
-	result := graphql.Do(graphql.Params{
+	result := go_graphql.Do(go_graphql.Params{
 		Context:        request.Context(),
-		Schema:         schema,
+		Schema:         graphql.Schema,
 		RequestString:  jsonData.Query,
 		VariableValues: jsonData.Variables,
 		OperationName:  jsonData.Operation,
@@ -54,16 +49,6 @@ func (handler *Handler) handleGraphQL(writer http.ResponseWriter, request *http.
 	if err := json.NewEncoder(writer).Encode(result); err != nil {
 		handler.errlog.Printf("Could not write result to response: %s", err)
 	}
-}
-
-// ServeHTTP fulfills the http.Handler contract for Handler
-func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if strings.Contains(request.URL.Path, "/graphql") {
-		handler.handleGraphQL(writer, request)
-		return
-	}
-
-	http.Error(writer, "Not yet implemented!", http.StatusNotImplemented)
 }
 
 // Prefix is the subdomain prefix
