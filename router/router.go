@@ -3,11 +3,11 @@
 package router
 
 import (
-	"context"
-	"server/lib/config"
-	"server/lib/handlers"
-	"server/lib/logging"
+	"server/config"
+	"server/handlers"
+	"server/logging"
 
+	"context"
 	"fmt"
 	"log"
 	"net/http"

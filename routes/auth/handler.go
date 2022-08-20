@@ -3,9 +3,9 @@
 package auth
 
 import (
-	"server/lib/env"
-	"server/lib/logging"
-	"server/lib/net/local"
+	"server/env"
+	"server/logging"
+	"server/net/local"
 
 	"fmt"
 	"log"

@@ -4,12 +4,13 @@ package main
 
 import (
 	"os"
+	"server/handlers"
 	"server/lib"
-	"server/lib/handlers"
 	"server/routes/api"
 	"server/routes/app"
 	"server/routes/auth"
 	"server/routes/git"
+	"server/routes/graphql"
 )
 
 func main() {
@@ -17,12 +18,14 @@ func main() {
 	appHandler := app.NewHandler()
 	authHandler := auth.NewHandler()
 	gitHandler := git.NewHandler()
+	graphqlHandler := graphql.NewHandler()
 
 	subdomains := []handlers.SubdomainHandler{
 		apiHandler,
 		appHandler,
 		authHandler,
 		gitHandler,
+		graphqlHandler,
 	}
 
 	defer func() { os.Exit(lib.Run(subdomains)) }()

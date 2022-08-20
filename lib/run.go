@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/signal"
 
-	"server/lib/config"
-	"server/lib/handlers"
-	"server/lib/logging"
-	"server/lib/router"
+	"server/config"
+	"server/handlers"
+	"server/logging"
+	"server/router"
 )
 
 // Run executes the main program loop
