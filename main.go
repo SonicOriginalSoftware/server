@@ -3,20 +3,21 @@
 package main
 
 import (
-	"os"
 	"server/handlers"
 	"server/lib"
 	"server/routes/app"
 	"server/routes/git"
 	"server/routes/graphql"
 	"server/routes/grpc"
+
+	"os"
 )
 
 func main() {
-	appHandler := app.NewHandler()
-	gitHandler := git.NewHandler()
-	graphqlHandler := graphql.NewHandler()
-	grpcHandler := grpc.NewHandler()
+	appHandler := app.New()
+	gitHandler := git.New()
+	graphqlHandler := graphql.New()
+	grpcHandler := grpc.New()
 
 	subdomains := []handlers.SubdomainHandler{
 		appHandler,

@@ -158,8 +158,8 @@ func (handler *Handler) Address() string {
 	return env.Address(prefix, fmt.Sprintf("%v.%v", prefix, local.Path("")))
 }
 
-// NewHandler returns a new Handler
-func NewHandler() *Handler {
+// New returns a new Handler
+func New() *Handler {
 	return &Handler{
 		outlog: logging.NewLog(prefix),
 		errlog: logging.NewError(prefix),
