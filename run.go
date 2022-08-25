@@ -16,8 +16,7 @@ import (
 func Run(ctx context.Context, subdomains []SubdomainHandler, certs []tls.Certificate) (code int) {
 	code = 1
 
-	outlog := logging.NewLog("")
-	errlog := logging.NewError("")
+	logger := logging.New("")
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
@@ -25,38 +24,38 @@ func Run(ctx context.Context, subdomains []SubdomainHandler, certs []tls.Certifi
 
 	config, err := config.New(certs)
 	if err != nil {
-		errlog.Printf("%v\n", err)
+		logger.Error("%v\n", err)
 		return
 	}
 
 	router, err := NewRouter(ctx, subdomains)
 	if err != nil {
-		errlog.Printf("%v\n", err)
+		logger.Error("%v\n", err)
 		return
 	}
 
 	address, serverError := router.Serve(config)
 	defer close(serverError)
 
-	outlog.Printf("Serving on [%v]\n", address)
+	logger.Log("Serving on [%v]\n", address)
 
 	select {
 	case <-ctx.Done():
-		outlog.Printf("Server context cancelled! Shutting down...\n")
+		logger.Log("Server context cancelled! Shutting down...\n")
 		if err = router.Shutdown(); err != nil {
-			errlog.Printf("%v\n", err)
+			logger.Error("%v\n", err)
 		} else {
 			code = 0
 		}
 	case <-interrupt:
-		outlog.Printf("Received interrupt signal! Shutting down...\n")
+		logger.Log("Received interrupt signal! Shutting down...\n")
 		if err = router.Shutdown(); err != nil {
-			errlog.Printf("%v\n", err)
+			logger.Error("%v\n", err)
 		} else {
 			code = 0
 		}
 	case err := <-serverError:
-		errlog.Printf("%v\n", err)
+		logger.Error("%v\n", err)
 	}
 
 	return

@@ -9,7 +9,6 @@ import (
 
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -20,18 +19,18 @@ type muxMap map[string]*http.ServeMux
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
-	context        context.Context
-	server         http.Server
-	muxes          muxMap
-	outlog, errlog *log.Logger
+	context context.Context
+	server  http.Server
+	muxes   muxMap
+	logger  *logging.Logger
 }
 
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	hostPrefix := strings.Split(request.Host, ".")[0]
-	router.outlog.Printf("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
+	router.logger.Log("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
 
 	if mux, found := router.muxes[hostPrefix]; found {
-		router.outlog.Printf("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
+		router.logger.Log("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
 		mux.ServeHTTP(writer, request)
 	} else {
 		http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
@@ -65,14 +64,12 @@ func (router *Router) Serve(config *config.Config) (address string, serverError 
 
 // NewRouter returns a new multiplexing router
 func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *Router, err error) {
-	outlog := logging.NewLog(prefix)
-	errlog := logging.NewError(prefix)
+	logger := logging.New(prefix)
 
 	router = &Router{
 		context: context,
 		muxes:   make(muxMap),
-		outlog:  outlog,
-		errlog:  errlog,
+		logger:  logger,
 	}
 
 	route := ""
@@ -82,7 +79,7 @@ func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *
 
 		route = eachSubdomainHandler.Address()
 		router.muxes[prefix].Handle(route, eachSubdomainHandler)
-		outlog.Printf("%v service registered for route [%v]", prefix, route)
+		logger.Log("%v service registered for route [%v]", prefix, route)
 	}
 
 	return
