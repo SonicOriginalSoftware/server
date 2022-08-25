@@ -2,13 +2,20 @@
 
 # Subdomain Serving
 
-Run the server by passing in a map of service prefixes (as `string`) and their respective `http.Handler`s to the `Run` method along with any desired certs (leaving an empty array of certs will serve over `http` rather than `https` - note that this also means no `HTTP/2`).
+Run the server by passing in a map of service prefixes (as `string`) and their respective `http.Handler`s to the `Run` method along with any desired certs. Leaving an empty array of certs will serve over `http` rather than `https` (this also means no `HTTP/2`).
 
-It does not serve on the top-level domain.
+It does not serve on an empty top-level domain (e.g. `NOT_IMPLEMENTED` response for `localhost:4430` vs. `app.localhost:4430`)
 
 ## Additional Subdomains
 
 Use any custom `http.Handler` of your choice. Just attach the handler to a `Prefix` string when passing through to the `Run` function.
+
+Check out these premade handlers to get you going!
+
+- [web-app](https://github.com/SonicOriginalSoftware/server-routes-app)
+- [git server](https://github.com/SonicOriginalSoftware/server-routes-git)
+- [grpc server](https://github.com/SonicOriginalSoftware/server-routes-grpc)
+- [graphql endpoint](https://github.com/SonicOriginalSoftware/server-routes-graphql)
 
 # Running and Stopping
 
