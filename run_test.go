@@ -1,12 +1,14 @@
 //revive:disable:package-comments
 
-package lib
+package lib_test
 
 import (
 	"context"
 
 	"crypto/tls"
 	"testing"
+
+	lib "git.nathanblair.rocks/server"
 )
 
 var cert = []byte(`-----BEGIN CERTIFICATE-----
@@ -58,7 +60,7 @@ lSLm75AMeTQghz1CfVEJnXc9
 -----END PRIVATE KEY-----`)
 
 func TestRun(t *testing.T) {
-	subdomains := []SubdomainHandler{}
+	subdomains := []lib.SubdomainHandler{}
 
 	cert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
@@ -74,7 +76,7 @@ func TestRun(t *testing.T) {
 	// then cancel the context and make sure the server shuts down
 	// successfully
 
-	if exitCode := Run(ctx, subdomains, certs); exitCode != 0 {
+	if exitCode := lib.Run(ctx, subdomains, certs); exitCode != 0 {
 		t.FailNow()
 	}
 
