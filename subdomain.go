@@ -10,5 +10,4 @@ import (
 type SubdomainHandler interface {
 	http.Handler
 	Prefix() string
-	Address() string
 }

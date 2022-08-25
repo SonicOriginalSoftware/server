@@ -77,7 +77,7 @@ func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *
 		prefix := eachSubdomainHandler.Prefix()
 		router.muxes[prefix] = http.NewServeMux()
 
-		route = eachSubdomainHandler.Address()
+		route = Lookup(prefix, "ADDRESS", fmt.Sprintf("%v.localhost/", prefix))
 		router.muxes[prefix].Handle(route, eachSubdomainHandler)
 		logger.Log("%v service registered for route [%v]", prefix, route)
 	}
