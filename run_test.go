@@ -60,7 +60,7 @@ lSLm75AMeTQghz1CfVEJnXc9
 -----END PRIVATE KEY-----`)
 
 func TestRun(t *testing.T) {
-	subdomains := []lib.SubdomainHandler{}
+	var subdomains []lib.SubdomainHandler
 
 	cert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
