@@ -62,7 +62,11 @@ func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
 			Certificates: certs,
 		}
 
-		serverError <- router.server.ListenAndServeTLS("", "")
+		if len(certs) == 0 {
+			serverError <- router.server.ListenAndServe()
+		} else {
+			serverError <- router.server.ListenAndServeTLS("", "")
+		}
 	}(certs)
 
 	router.logger.Log("Serving on [%v]\n", router.server.Addr)
