@@ -68,6 +68,12 @@ func TestRun(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 
+	// TODO Use a channel and have the Run loop execute in a goroutine
+	// Wait for a brief period, send a request to the server,
+	// check the response (should be a not implemented response),
+	// then cancel the context and make sure the server shuts down
+	// successfully
+
 	if exitCode := Run(ctx, subdomains, certs); exitCode != 0 {
 		t.FailNow()
 	}
