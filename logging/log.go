@@ -11,8 +11,8 @@ import (
 
 const flags = log.Ldate | log.Ltime | log.Lmsgprefix
 
-var outWriter io.Writer = os.Stdout
-var errWriter io.Writer = os.Stderr
+// DefaultLogger is an unprefixed default logger ready for use
+var DefaultLogger = New("")
 
 // Logger is used to log to appropriate levels
 type Logger struct {
@@ -25,18 +25,12 @@ type Logger struct {
 
 // New returns a valid instantiated logger
 func New(prefix string) *Logger {
-	logger := new(prefix, "[LOG] ", outWriter)
-	warn := new(prefix, "[WARN] ", outWriter)
-	info := new(prefix, "[INFO] ", outWriter)
-	debug := new(prefix, "[DEBUG] ", outWriter)
-	err := new(prefix, "[ERROR] ", errWriter)
-
 	return &Logger{
-		log:   logger,
-		warn:  warn,
-		info:  info,
-		debug: debug,
-		err:   err,
+		log:   new(prefix, "[LOG] ", os.Stdout),
+		warn:  new(prefix, "[WARN] ", os.Stdout),
+		info:  new(prefix, "[INFO] ", os.Stdout),
+		debug: new(prefix, "[DEBUG] ", os.Stdout),
+		err:   new(prefix, "[ERROR] ", os.Stderr),
 	}
 }
 

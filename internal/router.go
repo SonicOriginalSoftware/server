@@ -1,6 +1,6 @@
 //revive:disable:package-comments
 
-package lib
+package internal
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"git.nathanblair.rocks/server/handler"
 	"git.nathanblair.rocks/server/logging"
 )
 
@@ -70,19 +71,23 @@ func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
 }
 
 // NewRouter returns a new multiplexing router
-func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *Router) {
+func NewRouter(context context.Context, subdomains handler.Handlers) (router *Router) {
 	router = &Router{
 		context: context,
 		muxes:   make(muxMap),
 		logger:  logging.New(prefix),
 	}
 
-	var route, prefix string
-	for _, eachSubdomainHandler := range subdomains {
-		prefix = eachSubdomainHandler.Prefix()
+	var route string
+	var isSet bool
+	for prefix, eachSubdomainHandler := range subdomains {
 		router.muxes[prefix] = http.NewServeMux()
 
-		route = Lookup(prefix, "ADDRESS", fmt.Sprintf("%v.localhost/", prefix))
+		variableName := fmt.Sprintf("%v_SERVE_%v", strings.ToUpper(prefix), "ADDRESS")
+		if route, isSet = os.LookupEnv(variableName); !isSet {
+			route = fmt.Sprintf("%v.localhost/", prefix)
+		}
+
 		router.muxes[prefix].Handle(route, eachSubdomainHandler)
 		router.logger.Log("%v service registered for route [%v]", prefix, route)
 	}
