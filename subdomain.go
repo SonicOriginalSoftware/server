@@ -1,6 +1,6 @@
 //revive:disable:package-comments
 
-package handlers
+package lib
 
 import (
 	"net/http"

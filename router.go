@@ -1,10 +1,10 @@
 //revive:disable:package-comments
 
-package router
+package lib
 
 import (
+	"crypto/tls"
 	"server/config"
-	"server/handlers"
 	"server/logging"
 
 	"context"
@@ -20,6 +20,7 @@ type muxMap map[string]*http.ServeMux
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
+	context        context.Context
 	server         http.Server
 	muxes          muxMap
 	outlog, errlog *log.Logger
@@ -27,6 +28,7 @@ type Router struct {
 
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	hostPrefix := strings.Split(request.Host, ".")[0]
+	router.outlog.Printf("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
 
 	if mux, found := router.muxes[hostPrefix]; found {
 		router.outlog.Printf("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
@@ -37,8 +39,8 @@ func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 }
 
 // Shutdown gracefully shuts down the server (does not do any webhook notifications though)
-func (router *Router) Shutdown(ctx context.Context) error {
-	return router.server.Shutdown(ctx)
+func (router *Router) Shutdown() error {
+	return router.server.Shutdown(router.context)
 }
 
 // Serve the mux
@@ -50,24 +52,27 @@ func (router *Router) Serve(config *config.Config) (address string, serverError 
 
 	serverError = make(chan error, 1)
 
-	go func() {
-		if err := router.server.ListenAndServeTLS(config.CertPath, config.KeyPath); err != nil {
-			serverError <- err
+	go func(certs []tls.Certificate) {
+		router.server.TLSConfig = &tls.Config{
+			Certificates: certs,
 		}
-	}()
+
+		serverError <- router.server.ListenAndServeTLS("", "")
+	}(config.Certificates)
 
 	return address, serverError
 }
 
-// New returns a new multiplexing router
-func New(subdomains []handlers.SubdomainHandler) (router *Router, err error) {
+// NewRouter returns a new multiplexing router
+func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *Router, err error) {
 	outlog := logging.NewLog(prefix)
 	errlog := logging.NewError(prefix)
 
 	router = &Router{
-		muxes:  make(muxMap),
-		outlog: outlog,
-		errlog: errlog,
+		context: context,
+		muxes:   make(muxMap),
+		outlog:  outlog,
+		errlog:  errlog,
 	}
 
 	route := ""

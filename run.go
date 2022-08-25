@@ -4,17 +4,16 @@ package lib
 
 import (
 	"context"
+	"crypto/tls"
 	"os"
 	"os/signal"
 
 	"server/config"
-	"server/handlers"
 	"server/logging"
-	"server/router"
 )
 
 // Run executes the main program loop
-func Run(subdomains []handlers.SubdomainHandler) (code int) {
+func Run(ctx context.Context, subdomains []SubdomainHandler, certs []tls.Certificate) (code int) {
 	code = 1
 
 	outlog := logging.NewLog("")
@@ -24,13 +23,13 @@ func Run(subdomains []handlers.SubdomainHandler) (code int) {
 	signal.Notify(interrupt, os.Interrupt)
 	defer close(interrupt)
 
-	config, err := config.New(outlog, errlog)
+	config, err := config.New(certs)
 	if err != nil {
 		errlog.Printf("%v\n", err)
 		return
 	}
 
-	router, err := router.New(subdomains)
+	router, err := NewRouter(ctx, subdomains)
 	if err != nil {
 		errlog.Printf("%v\n", err)
 		return
@@ -42,9 +41,16 @@ func Run(subdomains []handlers.SubdomainHandler) (code int) {
 	outlog.Printf("Serving on [%v]\n", address)
 
 	select {
+	case <-ctx.Done():
+		outlog.Printf("Server context cancelled! Shutting down...\n")
+		if err = router.Shutdown(); err != nil {
+			errlog.Printf("%v\n", err)
+		} else {
+			code = 0
+		}
 	case <-interrupt:
 		outlog.Printf("Received interrupt signal! Shutting down...\n")
-		if err = router.Shutdown(context.Background()); err != nil {
+		if err = router.Shutdown(); err != nil {
 			errlog.Printf("%v\n", err)
 		} else {
 			code = 0
