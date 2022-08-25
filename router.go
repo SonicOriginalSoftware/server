@@ -7,12 +7,14 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"git.nathanblair.rocks/server/logging"
 )
 
 const prefix = "router"
+const localAddress = "localhost"
 
 type muxMap map[string]*http.ServeMux
 
@@ -41,8 +43,13 @@ func (router *Router) Shutdown() error {
 }
 
 // Serve the mux
-func (router *Router) Serve(config *Config) (serverError chan error) {
-	address := fmt.Sprintf("%v:%v", config.Address, config.Port)
+func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
+	port, isSet := os.LookupEnv("PORT")
+	if !isSet {
+		port = "4430"
+	}
+
+	address := fmt.Sprintf("%v:%v", localAddress, port)
 
 	router.server.Addr = address
 	router.server.Handler = router
@@ -55,7 +62,7 @@ func (router *Router) Serve(config *Config) (serverError chan error) {
 		}
 
 		serverError <- router.server.ListenAndServeTLS("", "")
-	}(config.Certificates)
+	}(certs)
 
 	router.logger.Log("Serving on [%v]\n", router.server.Addr)
 
@@ -70,9 +77,9 @@ func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *
 		logger:  logging.New(prefix),
 	}
 
-	route := ""
+	var route, prefix string
 	for _, eachSubdomainHandler := range subdomains {
-		prefix := eachSubdomainHandler.Prefix()
+		prefix = eachSubdomainHandler.Prefix()
 		router.muxes[prefix] = http.NewServeMux()
 
 		route = Lookup(prefix, "ADDRESS", fmt.Sprintf("%v.localhost/", prefix))

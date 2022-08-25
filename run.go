@@ -18,9 +18,8 @@ func Run(ctx context.Context, subdomains []SubdomainHandler, certs []tls.Certifi
 	defer close(interrupt)
 
 	logger := logging.New("")
-	config := NewConfig(certs)
 	router := NewRouter(ctx, subdomains)
-	serverError := router.Serve(config)
+	serverError := router.Serve(certs)
 	defer close(serverError)
 
 	var err error
