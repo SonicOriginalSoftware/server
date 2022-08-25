@@ -1,5 +1,7 @@
 # server
 
+This module will eventually be hosted on a `git` server outside of GitHub. For the time being there is a replace directive to point the module at the repository hosted on GitHub.
+
 # Subdomain Serving
 
 Run the server by passing in a map of service prefixes (as `string`) and their respective `http.Handler`s to the `Run` method along with any desired certs. Leaving an empty array of certs will serve over `http` rather than `https` (this also means no `HTTP/2`).
