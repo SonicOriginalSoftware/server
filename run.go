@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 
-	"server/config"
 	"server/logging"
 )
 
@@ -16,28 +15,19 @@ import (
 func Run(ctx context.Context, subdomains []SubdomainHandler, certs []tls.Certificate) (code int) {
 	code = 1
 
-	logger := logging.New("")
-
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	defer close(interrupt)
 
-	config, err := config.New(certs)
-	if err != nil {
-		logger.Error("%v\n", err)
-		return
-	}
-
-	router, err := NewRouter(ctx, subdomains)
-	if err != nil {
-		logger.Error("%v\n", err)
-		return
-	}
-
+	logger := logging.New("")
+	config := NewConfig(certs)
+	router := NewRouter(ctx, subdomains)
 	address, serverError := router.Serve(config)
 	defer close(serverError)
 
 	logger.Log("Serving on [%v]\n", address)
+
+	var err error
 
 	select {
 	case <-ctx.Done():

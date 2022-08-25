@@ -1,6 +1,6 @@
 //revive:disable:package-comments
 
-package config
+package lib
 
 import (
 	"crypto/tls"
@@ -14,8 +14,8 @@ type Config struct {
 	Certificates []tls.Certificate
 }
 
-// New returns a Config instance of an App with sane defaults
-func New(certs []tls.Certificate) (config *Config, err error) {
+// NewConfig returns a Config instance of an App with sane defaults
+func NewConfig(certs []tls.Certificate) (config *Config) {
 	var address, port string
 
 	isSet := false

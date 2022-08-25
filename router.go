@@ -3,14 +3,13 @@
 package lib
 
 import (
-	"crypto/tls"
-	"server/config"
-	"server/logging"
-
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"server/logging"
 )
 
 const prefix = "router"
@@ -43,7 +42,7 @@ func (router *Router) Shutdown() error {
 }
 
 // Serve the mux
-func (router *Router) Serve(config *config.Config) (address string, serverError chan error) {
+func (router *Router) Serve(config *Config) (address string, serverError chan error) {
 	address = fmt.Sprintf("%v:%v", config.Address, config.Port)
 
 	router.server.Addr = address
@@ -63,7 +62,7 @@ func (router *Router) Serve(config *config.Config) (address string, serverError 
 }
 
 // NewRouter returns a new multiplexing router
-func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *Router, err error) {
+func NewRouter(context context.Context, subdomains []SubdomainHandler) (router *Router) {
 	logger := logging.New(prefix)
 
 	router = &Router{
