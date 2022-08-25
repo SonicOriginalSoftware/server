@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 
-	"server/logging"
+	"git.nathanblair.rocks/server/logging"
 )
 
 // Run executes the main program loop

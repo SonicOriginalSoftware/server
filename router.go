@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"server/logging"
+	"git.nathanblair.rocks/server/logging"
 )
 
 const prefix = "router"
