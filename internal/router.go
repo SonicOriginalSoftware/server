@@ -14,8 +14,8 @@ import (
 	"git.nathanblair.rocks/server/logging"
 )
 
+const localHost = "localhost"
 const prefix = "router"
-const localAddress = "localhost"
 
 type muxMap map[string]*http.ServeMux
 
@@ -29,7 +29,7 @@ type Router struct {
 
 func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	hostPrefix := strings.Split(request.Host, ".")[0]
-	router.logger.Log("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
+	router.logger.Info("(%v) %v %v\n", hostPrefix, request.Method, request.URL)
 
 	if mux, found := router.muxes[hostPrefix]; found {
 		mux.ServeHTTP(writer, request)
@@ -44,13 +44,13 @@ func (router *Router) Shutdown() error {
 }
 
 // Serve the mux
-func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
+func (router *Router) Serve(certs []tls.Certificate) (serverError chan error, address string) {
 	port, isSet := os.LookupEnv("PORT")
 	if !isSet {
 		port = "4430"
 	}
 
-	address := fmt.Sprintf("%v:%v", localAddress, port)
+	address = fmt.Sprintf("%v:%v", localHost, port)
 
 	router.server.Addr = address
 	router.server.Handler = router
@@ -69,7 +69,7 @@ func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
 		}
 	}(certs)
 
-	router.logger.Log("Serving on [%v]\n", router.server.Addr)
+	router.logger.Info("Serving on [%v]\n", router.server.Addr)
 
 	return
 }
@@ -93,7 +93,7 @@ func NewRouter(context context.Context, subdomains handler.Handlers) (router *Ro
 		}
 
 		router.muxes[prefix].Handle(route, eachSubdomainHandler)
-		router.logger.Log("%v service registered for route [%v]", prefix, route)
+		router.logger.Info("%v service registered for route [%v]", prefix, route)
 	}
 
 	return

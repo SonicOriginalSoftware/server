@@ -4,6 +4,8 @@ package lib_test
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"crypto/tls"
 	"testing"
@@ -14,19 +16,25 @@ import (
 
 func TestRun(t *testing.T) {
 	var subdomains handler.Handlers
-
 	var certs []tls.Certificate
-	ctx, cancelCtx := context.WithCancel(context.Background())
+	ctx, cancelContext := context.WithCancel(context.Background())
 
-	// TODO Use a channel and have the Run loop execute in a goroutine
-	// Wait for a brief period, send a request to the server,
-	// check the response (should be a not implemented response),
-	// then cancel the context and make sure the server shuts down
-	// successfully
+	exitCode, address := lib.Run(ctx, subdomains, certs)
+	defer close(exitCode)
 
-	if exitCode := lib.Run(ctx, subdomains, certs); exitCode != 0 {
-		t.FailNow()
+	url := fmt.Sprintf("http://%v", address)
+	response, err := http.DefaultClient.Get(url)
+	if err != nil {
+		t.Fatalf("%v\n", err)
 	}
 
-	cancelCtx()
+	cancelContext()
+
+	if returnCode := <-exitCode; returnCode != 0 {
+		t.Fatalf("Server errored: %v", returnCode)
+	}
+
+	if response.Status != http.StatusText(http.StatusNotImplemented) && response.StatusCode != http.StatusNotImplemented {
+		t.Fatalf("Server returned: %v", response.Status)
+	}
 }

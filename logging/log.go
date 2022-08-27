@@ -16,7 +16,6 @@ var DefaultLogger = New("")
 
 // Logger is used to log to appropriate levels
 type Logger struct {
-	log   *log.Logger
 	warn  *log.Logger
 	info  *log.Logger
 	debug *log.Logger
@@ -26,7 +25,6 @@ type Logger struct {
 // New returns a valid instantiated logger
 func New(prefix string) *Logger {
 	return &Logger{
-		log:   new(prefix, "[LOG] ", os.Stdout),
 		warn:  new(prefix, "[WARN] ", os.Stdout),
 		info:  new(prefix, "[INFO] ", os.Stdout),
 		debug: new(prefix, "[DEBUG] ", os.Stdout),
@@ -41,24 +39,19 @@ func new(prefix, defaultPrefix string, writer io.Writer) *log.Logger {
 	return log.New(writer, defaultPrefix, flags)
 }
 
-// Log a message
-func (logger *Logger) Log(format string, v ...any) {
-	logger.log.Printf(format, v...)
-}
-
 // Info a message
 func (logger *Logger) Info(format string, v ...any) {
-	logger.log.Printf(format, v...)
+	logger.info.Printf(format, v...)
 }
 
 // Debug a message
 func (logger *Logger) Debug(format string, v ...any) {
-	logger.log.Printf(format, v...)
+	logger.debug.Printf(format, v...)
 }
 
 // Warn a message
 func (logger *Logger) Warn(format string, v ...any) {
-	logger.log.Printf(format, v...)
+	logger.warn.Printf(format, v...)
 }
 
 // Error a message
