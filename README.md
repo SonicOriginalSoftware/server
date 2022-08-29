@@ -56,19 +56,13 @@ func main() {
   // For example
   // os.Setenv("GIT_SERVE_ADDRESS", "git.localhost/")
 
-  subdomains := handler.Handlers{
-    // TODO Import your desired subdomain services here
-    // This is a map so you would set a string key
-    // associated with the handler
-    // and this key identifies the top-level domain
-    // where that service can be reached
-    // e.g. if importing the 'git' handler, use
-    // git.Prefix: git.New(),
-  }
-
-  var cert, key []byte
+  // TODO Import your desired subdomain services here
+  // e.g. if importing the 'git' handler, use
+  // _ = git.New()
 
   // TODO Load your cert and key or skip and just use
+  var cert, key []byte
+
   var certs []tls.Certificate
 
   cert, err := tls.X509KeyPair(cert, key)
@@ -79,7 +73,7 @@ func main() {
   certs = []tls.Certificate{cert}
   ctx, cancelContext := context.WithCancel(context.Background())
 
-  exitCode, address := lib.Run(ctx, subdomains, certs)
+  exitCode, address := lib.Run(ctx, certs)
   defer close(exitCode)
 
   if returnCode := <-exitCode; returnCode != 0 {
