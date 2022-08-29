@@ -86,7 +86,5 @@ func New() (router *Router) {
 	}
 
 	handlers.Register("", router, router.logger)
-	handleAddress := fmt.Sprintf("%v/", router.Address)
-	http.DefaultServeMux.Handle(handleAddress, router)
 	return
 }

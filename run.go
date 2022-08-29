@@ -42,7 +42,7 @@ func run(
 		logging.DefaultLogger.Error("%v\n", err)
 		code <- 1
 	}
-	logging.DefaultLogger.Info("Server shut down. Exiting...\n")
+	logging.DefaultLogger.Info("Server shut down.\n")
 }
 
 // Run executes the main program loop

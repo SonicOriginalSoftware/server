@@ -55,7 +55,7 @@ func TestRunSuccess(t *testing.T) {
 	exitCode, address := lib.Run(ctx, certs)
 	defer close(exitCode)
 
-	url := fmt.Sprintf("http://%v/", address)
+	url := fmt.Sprintf("http://%v", address)
 	response, err := http.DefaultClient.Get(url)
 	if err != nil {
 		t.Fatalf("%v\n", err)
