@@ -7,17 +7,53 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	lib "git.nathanblair.rocks/server"
 	"git.nathanblair.rocks/server/handler"
 )
 
-func TestRun(t *testing.T) {
-	var subdomains handler.Handlers
-	var certs []tls.Certificate
-	ctx, cancelContext := context.WithCancel(context.Background())
+var subdomains handler.Handlers
+var certs []tls.Certificate
 
+func TestRunCancel(t *testing.T) {
+	ctx, cancelFunction := context.WithCancel(context.Background())
+	exitCode, _ := lib.Run(ctx, subdomains, certs)
+	defer close(exitCode)
+
+	cancelFunction()
+
+	if returnCode := <-exitCode; returnCode != 0 {
+		t.Fatalf("Server errored: %v", returnCode)
+	}
+}
+
+func TestRunInterrupt(t *testing.T) {
+	ctx, cancelFunction := context.WithCancel(context.Background())
+	exitCode, _ := lib.Run(ctx, subdomains, certs)
+	defer close(exitCode)
+
+	pid := os.Getpid()
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		t.Fatalf("Could not get test process: %v", err)
+	}
+
+	err = process.Signal(os.Interrupt)
+	if err != nil {
+		t.Fatalf("Error sending interrupt signal: %v", err)
+	}
+
+	if returnCode := <-exitCode; returnCode != 0 {
+		t.Fatalf("Server errored: %v", returnCode)
+	}
+
+	cancelFunction()
+}
+
+func TestRunSuccess(t *testing.T) {
+	ctx, cancelFunction := context.WithCancel(context.Background())
 	exitCode, address := lib.Run(ctx, subdomains, certs)
 	defer close(exitCode)
 
@@ -27,7 +63,7 @@ func TestRun(t *testing.T) {
 		t.Fatalf("%v\n", err)
 	}
 
-	cancelContext()
+	cancelFunction()
 
 	if returnCode := <-exitCode; returnCode != 0 {
 		t.Fatalf("Server errored: %v", returnCode)
