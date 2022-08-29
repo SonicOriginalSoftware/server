@@ -4,10 +4,9 @@ package lib_test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
-
-	"crypto/tls"
 	"testing"
 
 	lib "git.nathanblair.rocks/server"

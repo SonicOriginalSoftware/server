@@ -35,11 +35,25 @@ This is a _very_ high-level server library. Using it requires the import and use
 
 ```go
 import (
+	"context"
+	"crypto/tls"
+
 	lib "git.nathanblair.rocks/server"
 	"git.nathanblair.rocks/server/handler"
 )
 
 func main() {
+  // TODO You can set a port for the service to run on either directly in your main function
+  // or on the system environment of the service
+  // os.Setenv("PORT", "4430") // Default
+
+  // TODO You can set the route of a particular service yourself by setting an environment variable
+  // in this main function or in the environment of the running service
+  // The format is "${SERVICE_NAME_PREFIX}_SERVE_ADDRESS"
+  // NOTE that the service prefix must match the Prefix defined for that service in its Handler declaration
+  // For example
+  // os.Setenv("GIT_SERVE_ADDRESS", "git.localhost") // default
+
 	subdomains := handler.Handlers{
     // TODO Import your desired subdomain services here
     // This is a map so you would set a string key
@@ -53,18 +67,21 @@ func main() {
   var cert, key []byte
 
   // TODO Load your cert and key or skip and just use
-  // var certs []tls.Certificate
+  var certs []tls.Certificate
 
 	cert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
     // Handle a certificate server failure for your app here
 	}
 
-	certs := []tls.Certificate{cert}
-	ctx, cancelCtx := context.WithCancel(context.Background())
+	certs = []tls.Certificate{cert}
+	ctx, cancelContext := context.WithCancel(context.Background())
 
-  if exitCode := lib.Run(ctx, subdomains, certs); exitCode != 0 {
-    // Handle the server error according to your needs
+	exitCode, address := lib.Run(ctx, subdomains, certs)
+	defer close(exitCode)
+
+	if returnCode := <-exitCode; returnCode != 0 {
+    // TODO Handle your server failing out
 	}
 
   cancelCtx()
