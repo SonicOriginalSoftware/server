@@ -11,15 +11,13 @@ import (
 	"testing"
 
 	lib "git.nathanblair.rocks/server"
-	"git.nathanblair.rocks/server/handler"
 )
 
-var subdomains handler.Handlers
 var certs []tls.Certificate
 
 func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	exitCode, _ := lib.Run(ctx, subdomains, certs)
+	exitCode, _ := lib.Run(ctx, certs)
 	defer close(exitCode)
 
 	cancelFunction()
@@ -31,7 +29,7 @@ func TestRunCancel(t *testing.T) {
 
 func TestRunInterrupt(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	exitCode, _ := lib.Run(ctx, subdomains, certs)
+	exitCode, _ := lib.Run(ctx, certs)
 	defer close(exitCode)
 
 	pid := os.Getpid()
@@ -54,10 +52,10 @@ func TestRunInterrupt(t *testing.T) {
 
 func TestRunSuccess(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	exitCode, address := lib.Run(ctx, subdomains, certs)
+	exitCode, address := lib.Run(ctx, certs)
 	defer close(exitCode)
 
-	url := fmt.Sprintf("http://%v", address)
+	url := fmt.Sprintf("http://%v/", address)
 	response, err := http.DefaultClient.Get(url)
 	if err != nil {
 		t.Fatalf("%v\n", err)

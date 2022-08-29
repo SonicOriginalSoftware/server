@@ -8,8 +8,7 @@ import (
 	"os"
 	"os/signal"
 
-	"git.nathanblair.rocks/server/handler"
-	"git.nathanblair.rocks/server/internal"
+	"git.nathanblair.rocks/server/internal/router"
 	"git.nathanblair.rocks/server/logging"
 )
 
@@ -18,7 +17,7 @@ func run(
 	code chan int,
 	interrupt chan os.Signal,
 	serverError chan error,
-	router *internal.Router,
+	router *router.Router,
 ) {
 	defer close(interrupt)
 	defer close(serverError)
@@ -47,17 +46,15 @@ func run(
 }
 
 // Run executes the main program loop
-func Run(
-	ctx context.Context,
-	subdomains handler.Handlers,
-	certs []tls.Certificate,
-) (code chan int, address string) {
+func Run(ctx context.Context, certs []tls.Certificate) (code chan int, address string) {
 	code = make(chan int, 1)
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	router := internal.NewRouter(ctx, subdomains)
-	serverError, address := router.Serve(certs)
+	router := router.New()
+	address = router.Address
+
+	serverError := router.Serve(certs)
 
 	go run(ctx, code, interrupt, serverError, router)
 

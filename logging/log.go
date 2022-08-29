@@ -14,6 +14,14 @@ const flags = log.Ldate | log.Ltime | log.Lmsgprefix
 // DefaultLogger is an unprefixed default logger ready for use
 var DefaultLogger = New("")
 
+// Log defines a general logger
+type Log interface {
+	Info(format string, v ...any)
+	Debug(format string, v ...any)
+	Warn(format string, v ...any)
+	Error(format string, v ...any)
+}
+
 // Logger is used to log to appropriate levels
 type Logger struct {
 	warn  *log.Logger

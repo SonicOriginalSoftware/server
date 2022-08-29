@@ -51,8 +51,10 @@ func main() {
   // in this main function or in the environment of the running service
   // The format is "${SERVICE_NAME_PREFIX}_SERVE_ADDRESS"
   // NOTE that the service prefix must match the Prefix defined for that service in its Handler declaration
+  // Also note that if your intention is to serve at the root of some address
+  // you will need to suffix your address with a trailing '/'
   // For example
-  // os.Setenv("GIT_SERVE_ADDRESS", "git.localhost") // default
+  // os.Setenv("GIT_SERVE_ADDRESS", "git.localhost/")
 
   subdomains := handler.Handlers{
     // TODO Import your desired subdomain services here

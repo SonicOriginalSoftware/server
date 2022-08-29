@@ -3,7 +3,7 @@ go 1.19
 use (
 	.
 	../routes/app
-	../routes/git
-	../routes/graphql
-	../routes/grpc
+// ../routes/git
+// ../routes/graphql
+// ../routes/grpc
 )
