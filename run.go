@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/signal"
 
-	"git.nathanblair.rocks/server/internal/router"
-	"git.nathanblair.rocks/server/logging"
+	"git.sonicoriginal.software/server/internal/router"
+	"git.sonicoriginal.software/server/logging"
 )
 
 func run(

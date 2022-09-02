@@ -38,8 +38,8 @@ import (
   "context"
   "crypto/tls"
 
-  lib "git.nathanblair.rocks/server"
-  "git.nathanblair.rocks/server/handler"
+  lib "git.sonicoriginal.software/server"
+  "git.sonicoriginal.software/server/handler"
 )
 
 func main() {

@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"os"
 
-	"git.nathanblair.rocks/server/handlers"
-	"git.nathanblair.rocks/server/internal"
-	"git.nathanblair.rocks/server/logging"
+	"git.sonicoriginal.software/server/handlers"
+	"git.sonicoriginal.software/server/internal"
+	"git.sonicoriginal.software/server/logging"
 )
 
 // Router is a server multiplexer meant for handling multiple sub-domains
@@ -85,6 +85,6 @@ func New() (router *Router) {
 		logger:  logging.New(prefix),
 	}
 
-	handlers.Register("", router, router.logger)
+	handlers.Register("", "", "", router, router.logger)
 	return
 }

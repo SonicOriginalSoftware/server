@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	lib "git.nathanblair.rocks/server"
+	lib "git.sonicoriginal.software/server"
 )
 
 var certs []tls.Certificate
