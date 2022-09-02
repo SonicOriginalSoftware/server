@@ -5,8 +5,6 @@ package lib_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
-	"net/http"
 	"os"
 	"testing"
 
@@ -48,26 +46,4 @@ func TestRunInterrupt(t *testing.T) {
 	}
 
 	cancelFunction()
-}
-
-func TestRunSuccess(t *testing.T) {
-	ctx, cancelFunction := context.WithCancel(context.Background())
-	exitCode, address := lib.Run(ctx, certs)
-	defer close(exitCode)
-
-	url := fmt.Sprintf("http://%v", address)
-	response, err := http.DefaultClient.Get(url)
-	if err != nil {
-		t.Fatalf("%v\n", err)
-	}
-
-	cancelFunction()
-
-	if returnCode := <-exitCode; returnCode != 0 {
-		t.Fatalf("Server errored: %v", returnCode)
-	}
-
-	if response.Status != http.StatusText(http.StatusNotImplemented) && response.StatusCode != http.StatusNotImplemented {
-		t.Fatalf("Server returned: %v", response.Status)
-	}
 }

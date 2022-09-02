@@ -9,14 +9,13 @@ import (
 	"net/http"
 	"os"
 
-	"git.sonicoriginal.software/server/handlers"
 	"git.sonicoriginal.software/server/internal"
 	"git.sonicoriginal.software/server/logging"
 )
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
-	logger      *logging.Logger
+	logger      logging.Log
 	listener    *net.Listener
 	tlsListener *net.Listener
 	Address     string
@@ -33,11 +32,6 @@ func (router *Router) start(listener net.Listener, certs []tls.Certificate, serv
 		router.tlsListener = &tlsListener
 		serverError <- http.ServeTLS(tlsListener, http.DefaultServeMux, "", "")
 	}
-}
-
-func (router *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	router.logger.Info("(%v) %v %v\n", request.Host, request.Method, request.URL)
-	http.Error(writer, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 }
 
 // Shutdown shuts down the server
@@ -85,6 +79,5 @@ func New() (router *Router) {
 		logger:  logging.New(prefix),
 	}
 
-	handlers.Register("", "", "", router, router.logger)
 	return
 }
