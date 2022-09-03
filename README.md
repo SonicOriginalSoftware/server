@@ -14,10 +14,10 @@ Use any custom `http.Handler` of your choice. Just attach the handler to a `Pref
 
 Check out these premade handlers to get you going!
 
-- [web-app](https://github.com/SonicOriginalSoftware/server-routes-app)
-- [git server](https://github.com/SonicOriginalSoftware/server-routes-git)
-- [grpc server](https://github.com/SonicOriginalSoftware/server-routes-grpc)
-- [graphql endpoint](https://github.com/SonicOriginalSoftware/server-routes-graphql)
+- [web-app](https://github.sonicoriginal.software/server-routes-app)
+- [git server](https://github.sonicoriginal.software/server-routes-git)
+- [grpc server](https://github.sonicoriginal.software/server-routes-grpc)
+- [graphql endpoint](https://github.sonicoriginal.software/server-routes-graphql)
 
 # Running and Stopping
 
