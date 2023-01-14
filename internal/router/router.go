@@ -4,6 +4,7 @@ package router
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,36 +16,36 @@ import (
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
-	logger      logging.Log
-	listener    *net.Listener
-	tlsListener *net.Listener
-	Address     string
+	logger   logging.Log
+	listener *net.Listener
+	Address  string
 }
 
-func (router *Router) start(listener net.Listener, certs []tls.Certificate, serverError chan error) {
-	if len(certs) == 0 {
-		serverError <- http.Serve(listener, http.DefaultServeMux)
+func (router *Router) start(useTLS bool, serverError chan error) {
+	var err error
+	if useTLS {
+		err = http.ServeTLS(*router.listener, http.DefaultServeMux, "", "")
 	} else {
-		tlsConfig := &tls.Config{
-			Certificates: certs,
-		}
-		tlsListener := tls.NewListener(listener, tlsConfig)
-		router.tlsListener = &tlsListener
-		serverError <- http.ServeTLS(tlsListener, http.DefaultServeMux, "", "")
+		err = http.Serve(*router.listener, http.DefaultServeMux)
 	}
+	router.logger.Info("Server stopped\n")
+
+	if err != nil {
+		opError, isOpError := err.(*net.OpError)
+		if isOpError && errors.Is(opError.Err, net.ErrClosed) {
+			err = nil
+		} else {
+			router.logger.Error("%v\n", err)
+		}
+	}
+
+	serverError <- err
 }
 
 // Shutdown shuts down the server
-func (router *Router) Shutdown() (err error) {
-	if router.tlsListener != nil {
-		if err = (*router.tlsListener).Close(); err != nil {
-			return
-		}
-	}
-	if err = (*router.listener).Close(); err != nil {
-		return
-	}
-	return
+func (router *Router) Shutdown() error {
+	router.logger.Info("Stopping server...\n")
+	return (*router.listener).Close()
 }
 
 // Serve the mux
@@ -57,8 +58,18 @@ func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
 		return
 	}
 	router.listener = &listener
+	useTLS := false
 
-	go router.start(listener, certs, serverError)
+	if len(certs) > 0 {
+		useTLS = true
+		tlsConfig := &tls.Config{
+			Certificates: certs,
+		}
+		listener = tls.NewListener(listener, tlsConfig)
+		router.listener = &listener
+	}
+
+	go router.start(useTLS, serverError)
 
 	router.logger.Info("Serving on [%v]\n", router.Address)
 
