@@ -40,6 +40,7 @@ func (router *Router) start(useTLS bool, serverError chan error) {
 	}
 
 	serverError <- err
+	close(serverError)
 }
 
 // Shutdown shuts down the server
@@ -78,12 +79,12 @@ func (router *Router) Serve(certs []tls.Certificate) (serverError chan error) {
 
 // New returns a new multiplexing router
 func New() (router *Router) {
-	const prefix = "router"
 	port, isSet := os.LookupEnv("PORT")
 	if !isSet {
 		port = internal.DefaultPort
 	}
 
+	const prefix = "router"
 	address := fmt.Sprintf("%v:%v", internal.LocalHost, port)
 	router = &Router{
 		Address: address,

@@ -13,9 +13,6 @@ import (
 
 var certs []tls.Certificate
 
-// FIXME Who's responsibility is it to close the errChan channel?
-// Or the interrupt channel?
-
 func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
 	_, errChan := lib.Run(ctx, certs)

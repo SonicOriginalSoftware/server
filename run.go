@@ -12,6 +12,16 @@ import (
 	"git.sonicoriginal.software/server/logging"
 )
 
+// run will block and await the occurrence of 3 possible scenarios:
+//
+// 1) The context is cancelled
+//
+// 2) An OS SIGINT is sent
+//
+// 3) The server encounters a critical error
+//
+// After any of these scenarios occurs, the router will attempt to be shutdown
+// Any errors will be sent to the serverError channel and logged
 func run(ctx context.Context, router *router.Router, serverError chan error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
@@ -21,6 +31,7 @@ func run(ctx context.Context, router *router.Router, serverError chan error) {
 		logging.DefaultLogger.Info("Server context cancelled\n")
 	case <-interrupt:
 		logging.DefaultLogger.Info("Received interrupt signal\n")
+		close(interrupt)
 	case <-serverError:
 		logging.DefaultLogger.Error("%v\n", serverError)
 	}
@@ -30,13 +41,13 @@ func run(ctx context.Context, router *router.Router, serverError chan error) {
 }
 
 // Run executes the main program loop
-func Run(ctx context.Context, certs []tls.Certificate) (address string, err chan error) {
+func Run(ctx context.Context, certs []tls.Certificate) (address string, serverError chan error) {
 	router := router.New()
 	address = router.Address
 
-	err = router.Serve(certs)
+	serverError = router.Serve(certs)
 
-	go run(ctx, router, err)
+	go run(ctx, router, serverError)
 
 	return
 }
