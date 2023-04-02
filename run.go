@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/signal"
 
+	"git.sonicoriginal.software/logger"
 	"git.sonicoriginal.software/server/internal/router"
-	"git.sonicoriginal.software/server/logging"
 )
 
 // run will block and await the occurrence of 3 possible scenarios:
@@ -28,15 +28,15 @@ func run(ctx context.Context, router *router.Router, serverError chan error) {
 
 	select {
 	case <-ctx.Done():
-		logging.DefaultLogger.Info("Server context cancelled\n")
+		logger.DefaultLogger.Info("Server context cancelled\n")
 	case <-interrupt:
-		logging.DefaultLogger.Info("Received interrupt signal\n")
+		logger.DefaultLogger.Info("Received interrupt signal\n")
 		close(interrupt)
 	case <-serverError:
-		logging.DefaultLogger.Error("%v\n", serverError)
+		logger.DefaultLogger.Error("%v\n", serverError)
 	}
 	if err := router.Shutdown(); err != nil {
-		logging.DefaultLogger.Error("%v\n", err)
+		logger.DefaultLogger.Error("%v\n", err)
 	}
 }
 

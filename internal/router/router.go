@@ -10,13 +10,13 @@ import (
 	"net/http"
 	"os"
 
+	"git.sonicoriginal.software/logger"
 	"git.sonicoriginal.software/server/internal"
-	"git.sonicoriginal.software/server/logging"
 )
 
 // Router is a server multiplexer meant for handling multiple sub-domains
 type Router struct {
-	logger   logging.Log
+	logger   logger.Log
 	listener *net.Listener
 	Address  string
 }
@@ -88,7 +88,7 @@ func New() (router *Router) {
 	address := fmt.Sprintf("%v:%v", internal.LocalHost, port)
 	router = &Router{
 		Address: address,
-		logger:  logging.New(prefix),
+		logger:  logger.New(prefix, logger.DefaultSeverity, os.Stdout, os.Stderr),
 	}
 
 	return

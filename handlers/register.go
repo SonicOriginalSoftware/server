@@ -8,12 +8,12 @@ import (
 	"os"
 	"strings"
 
+	"git.sonicoriginal.software/logger"
 	"git.sonicoriginal.software/server/internal"
-	"git.sonicoriginal.software/server/logging"
 )
 
 // Register a handler for a route
-func Register(serviceName, subdomain, path string, handler http.Handler, logger logging.Log) {
+func Register(serviceName, subdomain, path string, handler http.Handler, logger logger.Log) {
 	variableName := fmt.Sprintf("%v_SERVE_ADDRESS", strings.ToUpper(serviceName))
 	var route string
 	var isSet bool
