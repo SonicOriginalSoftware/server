@@ -1,6 +1,6 @@
 //revive:disable:package-comments
 
-package lib_test
+package server_test
 
 import (
 	"context"
