@@ -12,16 +12,6 @@ import (
 	"git.sonicoriginal.software/server/internal/router"
 )
 
-// run will block and await the occurrence of 3 possible scenarios:
-//
-// 1) The context is cancelled
-//
-// 2) An OS SIGINT is sent
-//
-// 3) The server encounters a critical error
-//
-// After any of these scenarios occurs, the router will attempt to be shutdown
-// Any errors will be sent to the serverError channel and logged
 func run(ctx context.Context, router *router.Router, serverError chan error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
@@ -32,8 +22,8 @@ func run(ctx context.Context, router *router.Router, serverError chan error) {
 	case <-interrupt:
 		logger.DefaultLogger.Info("Received interrupt signal\n")
 		close(interrupt)
-	case <-serverError:
-		logger.DefaultLogger.Error("%v\n", serverError)
+	case err := <-serverError:
+		logger.DefaultLogger.Error("%v\n", err)
 	}
 	if err := router.Shutdown(); err != nil {
 		logger.DefaultLogger.Error("%v\n", err)
@@ -41,6 +31,16 @@ func run(ctx context.Context, router *router.Router, serverError chan error) {
 }
 
 // Run executes the main program loop
+//
+// This will block and await the occurrence of 3 possible scenarios:
+//
+//  1. The context is cancelled
+//  2. An OS SIGINT is sent
+//  3. The server encounters a critical error
+//
+// - After any of these scenarios occurs, the router will attempt to be shutdown
+//
+// - Any errors will be sent to the serverError channel and logged
 func Run(ctx context.Context, certs []tls.Certificate) (address string, serverError chan error) {
 	router := router.New()
 	address = router.Address
