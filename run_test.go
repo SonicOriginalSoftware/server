@@ -13,6 +13,8 @@ import (
 	"git.sonicoriginal.software/server"
 )
 
+const portEnvKey = "TEST_PORT"
+
 var certs []tls.Certificate
 
 var testLogger = logger.New("test", logger.DefaultSeverity, os.Stdout, os.Stderr)
@@ -33,7 +35,7 @@ func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expec
 
 func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, certs)
+	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
 	testLogger.Info("Serving on [%v]\n", address)
 
@@ -44,7 +46,7 @@ func TestRunCancel(t *testing.T) {
 
 func TestRunInterrupt(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, certs)
+	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 	testLogger.Info("Serving on [%v]\n", address)
 
 	pid := os.Getpid()
@@ -67,10 +69,10 @@ func TestRunInterrupt(t *testing.T) {
 
 func TestRunInvalidPort(t *testing.T) {
 	const invalidPort = "-8000"
-	t.Setenv(server.PortEnvKey, invalidPort)
+	t.Setenv(portEnvKey, invalidPort)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, certs)
+	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
 	testLogger.Info("Serving on [%v]\n", address)
 

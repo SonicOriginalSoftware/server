@@ -18,8 +18,6 @@ const (
 	LocalHost = "localhost"
 	// DefaultPort is the default port used for service
 	DefaultPort = "4430"
-	// PortEnvKey is the key that will be used for obtaining the port the server will serve on
-	PortEnvKey = "PORT"
 	// ServerContextCancelled denotes when a server run returns because its context is cancelled
 	ServerContextCancelled = "Server context cancelled"
 	// ServerReceivedInterrupt denotes when a server run returns because its context is cancelled
@@ -40,11 +38,12 @@ type Error struct {
 }
 
 // Starts up server
-func start(certs []tls.Certificate, listener net.Listener, internalError chan error) {
+func start(certs *[]tls.Certificate, listener net.Listener, internalError chan error) {
+	c := *certs
 	var err error
-	if len(certs) > 0 {
+	if len(c) > 0 {
 		tlsConfig := &tls.Config{
-			Certificates: certs,
+			Certificates: c,
 		}
 		listener = tls.NewListener(listener, tlsConfig)
 		err = http.ServeTLS(listener, http.DefaultServeMux, "", "")
@@ -92,11 +91,11 @@ func await(ctx context.Context, listener net.Listener, internalError chan error,
 // the returned `reportedError` channel
 //
 // Fatal errors will be sent to the returned channel and the server will shutdown
-func Run(ctx context.Context, certs []tls.Certificate) (address string, reportedError chan Error) {
+func Run(ctx context.Context, certs *[]tls.Certificate, portEnvKey string) (address string, reportedError chan Error) {
 	internalError := make(chan error, 0)
 	reportedError = make(chan Error, 1)
 
-	port, set := os.LookupEnv(PortEnvKey)
+	port, set := os.LookupEnv(portEnvKey)
 	if !set {
 		port = DefaultPort
 	}
