@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"git.sonicoriginal.software/logger"
-	"git.sonicoriginal.software/server"
+	"git.sonicoriginal.software/server/v2"
 )
 
 type handler struct {

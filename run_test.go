@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	logger "git.sonicoriginal.software/logger"
-	"git.sonicoriginal.software/server"
+	"git.sonicoriginal.software/server/v2"
 )
 
 const portEnvKey = "TEST_PORT"
