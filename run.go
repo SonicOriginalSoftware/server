@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	// LocalHost is the name of the localhost
-	LocalHost = "localhost"
-	// DefaultPort is the default port used for service
-	DefaultPort = "4430"
+	// localHost is the name of the localhost
+	localHost = "localhost"
+	// defaultPort is the default port used for service
+	defaultPort = "4430"
 	// ServerContextCancelled denotes when a server run returns because its context is cancelled
 	ServerContextCancelled = "Server context cancelled"
 	// ServerReceivedInterrupt denotes when a server run returns because its context is cancelled
@@ -97,9 +97,9 @@ func Run(ctx context.Context, certs *[]tls.Certificate, portEnvKey string) (addr
 
 	port, set := os.LookupEnv(portEnvKey)
 	if !set {
-		port = DefaultPort
+		port = defaultPort
 	}
-	address = fmt.Sprintf("%v:%v", LocalHost, port)
+	address = fmt.Sprintf("%v:%v", localHost, port)
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {

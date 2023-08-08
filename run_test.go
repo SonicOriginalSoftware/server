@@ -10,15 +10,12 @@ import (
 	"os"
 	"testing"
 
-	logger "git.sonicoriginal.software/logger.git"
 	"git.sonicoriginal.software/server.git/v2"
 )
 
 const portEnvKey = "TEST_PORT"
 
 var certs []tls.Certificate
-
-var testLogger = logger.New("test", logger.DefaultSeverity, os.Stdout, os.Stderr)
 
 type testHandler struct{}
 
@@ -30,7 +27,6 @@ func (handler *testHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 
 	} else if written != len(ok) {
 		// FIXME
-		// testLogger.Error()
 	}
 }
 
@@ -42,7 +38,7 @@ func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expec
 
 	contextError := serverError.Context.Error()
 
-	testLogger.Error("%v\n", contextError)
+	t.Logf("%v\n", contextError)
 	if serverError.Context.Error() != expectedErrorValue.Error() {
 		t.Fatalf("Server failed unexpectedly: %v", contextError)
 	}
@@ -52,7 +48,7 @@ func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
 	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
-	testLogger.Info("Serving on [%v]\n", address)
+	t.Logf("Serving on [%v]\n", address)
 
 	cancelFunction()
 
@@ -62,7 +58,7 @@ func TestRunCancel(t *testing.T) {
 func TestRunInterrupt(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
 	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
-	testLogger.Info("Serving on [%v]\n", address)
+	t.Logf("Serving on [%v]\n", address)
 
 	pid := os.Getpid()
 	process, err := os.FindProcess(pid)
@@ -89,7 +85,7 @@ func TestRunInvalidPort(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
 	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
-	testLogger.Info("Serving on [%v]\n", address)
+	t.Logf("Serving on [%v]\n", address)
 
 	cancelFunction()
 
@@ -103,7 +99,7 @@ func TestTLSServer(t *testing.T) {
 	t.Skip("Not yet implemented")
 }
 
-// TODO Write tests for the TLS HTTP server
+// TODO Write tests for validating a response from server a server handler
 func TestRequest(t *testing.T) {
 	t.Skip("Not yet implemented")
 }
