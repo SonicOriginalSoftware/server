@@ -10,6 +10,9 @@ import (
 
 // RegisterHandler a handler for a route with the default http servemux
 func RegisterHandler(path string, handler http.Handler) (route string) {
+	if !strings.HasPrefix(path, "/") {
+		path = fmt.Sprintf("/%v", path)
+	}
 	if !strings.HasSuffix(path, "/") {
 		path = fmt.Sprintf("%v/", path)
 	}

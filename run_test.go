@@ -3,9 +3,11 @@
 package server_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -15,18 +17,20 @@ import (
 
 const portEnvKey = "TEST_PORT"
 
-var certs []tls.Certificate
+var (
+	certs            []tls.Certificate
+	expectedResponse = []byte("hello")
+)
 
-type testHandler struct{}
+type testHandler struct {
+	t *testing.T
+}
 
 func (handler *testHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	ok := []byte("hello")
-
-	written, err := writer.Write(ok)
-	if err != nil {
-
-	} else if written != len(ok) {
-		// FIXME
+	if written, err := writer.Write(expectedResponse); err != nil {
+		handler.t.Logf("%v", err)
+	} else if written != len(expectedResponse) {
+		handler.t.Log("Could not write all bytes")
 	}
 }
 
@@ -39,7 +43,7 @@ func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expec
 	contextError := serverError.Context.Error()
 
 	t.Logf("%v\n", contextError)
-	if serverError.Context.Error() != expectedErrorValue.Error() {
+	if contextError != expectedErrorValue.Error() {
 		t.Fatalf("Server failed unexpectedly: %v", contextError)
 	}
 }
@@ -99,7 +103,45 @@ func TestTLSServer(t *testing.T) {
 	t.Skip("Not yet implemented")
 }
 
-// TODO Write tests for validating a response from server a server handler
-func TestRequest(t *testing.T) {
-	t.Skip("Not yet implemented")
+func TestRoundTrip(t *testing.T) {
+	const path = "app"
+	h := &testHandler{t}
+	route := server.RegisterHandler(path, h)
+
+	t.Logf("Handler registered for route [%v]\n", route)
+
+	ctx, cancelFunction := context.WithCancel(context.Background())
+	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+
+	t.Logf("Serving on [%v]\n", address)
+
+	url := fmt.Sprintf("http://%v%v", address, route)
+
+	t.Logf("Requesting [%v]\n", url)
+
+	response, err := http.DefaultClient.Get(url)
+	if err != nil {
+		t.Fatalf("%v\n", err)
+	}
+
+	cancelFunction()
+
+	verifyServerError(t, serverErrorChannel, server.ErrContextCancelled)
+
+	t.Log("Response:")
+	t.Logf("  Status code: %v", response.StatusCode)
+	t.Logf("  Status text: %v", response.Status)
+
+	if response.Status != http.StatusText(http.StatusOK) && response.StatusCode != http.StatusOK {
+		t.Fatalf("Server returned: %v", response.Status)
+	}
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("Could not read response: %v", err)
+	} else if !bytes.Equal(responseBody, expectedResponse) {
+		t.Fatalf("%v != %v", responseBody, expectedResponse)
+	}
+
+	t.Logf("  Body: %v", string(responseBody))
 }
