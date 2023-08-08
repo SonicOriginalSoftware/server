@@ -31,9 +31,9 @@ This is a _very_ high-level server library. Using it requires the import and use
 import (
   "context"
   "crypto/tls"
+  "os"
 
   "git.sonicoriginal.software/server.git/v2"
-  "git.sonicoriginal.software/server.git/v2/handler"
 )
 
 func main() {
@@ -54,21 +54,21 @@ func main() {
   // certs = []tls.Certificate{cert}
 
   ctx, cancelContext := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+  address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
   // Do other stuff while your server runs
 
   // Wait for your server to close (through a signal or internal error)
-	serverError := <-serverErrorChannel
-	if serverError.Close != nil {
+  serverError := <-serverErrorChannel
+  if serverError.Close != nil {
     // Handle closing server error
-	}
+  }
 
-	contextError := serverError.Context.Error()
+  contextError := serverError.Context.Error()
 
-	if serverError.Context.Error() != nil {
+  if serverError.Context.Error() != nil {
     // Handle server failing unexpectedly
-	}
+  }
 
   cancelCtx()
 }
