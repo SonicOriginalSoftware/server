@@ -8,15 +8,20 @@ import (
 	"strings"
 )
 
-// RegisterHandler a handler for a route with the default http servemux
-func RegisterHandler(path string, handler http.Handler) (route string) {
+// RegisterHandler registers a handler for a path with the default serve mux
+func RegisterHandler(path string, handler http.Handler, mux *http.ServeMux) (route string) {
 	if !strings.HasPrefix(path, "/") {
 		path = fmt.Sprintf("/%v", path)
 	}
 	if !strings.HasSuffix(path, "/") {
 		path = fmt.Sprintf("%v/", path)
 	}
-	route = path
-	http.DefaultServeMux.Handle(route, handler)
+	route = strings.ReplaceAll(path, "//", "/")
+
+	if mux == nil {
+		mux = http.DefaultServeMux
+	}
+
+	mux.Handle(route, handler)
 	return
 }

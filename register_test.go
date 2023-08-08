@@ -15,12 +15,12 @@ type handler struct {
 
 func TestRegisterRootHandler(t *testing.T) {
 	path := "/"
-	server.RegisterHandler(path, handler{})
-	t.Logf("service registered for route: %v", path)
+	server.RegisterHandler(path, handler{}, nil)
+	t.Logf("Service registered for route: %v", path)
 }
 
 func TestRegisterServiceHandler(t *testing.T) {
 	path := "service"
-	route := server.RegisterHandler(path, handler{})
-	t.Logf("service registered for route: %v", route)
+	route := server.RegisterHandler(path, handler{}, nil)
+	t.Logf("Service registered for route: %v", route)
 }

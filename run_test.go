@@ -50,7 +50,7 @@ func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expec
 
 func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 
@@ -61,7 +61,7 @@ func TestRunCancel(t *testing.T) {
 
 func TestRunInterrupt(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 	t.Logf("Serving on [%v]\n", address)
 
 	pid := os.Getpid()
@@ -87,7 +87,7 @@ func TestRunInvalidPort(t *testing.T) {
 	t.Setenv(portEnvKey, invalidPort)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 
@@ -104,14 +104,18 @@ func TestTLSServer(t *testing.T) {
 }
 
 func TestRoundTrip(t *testing.T) {
-	const path = "app"
+	const path = ""
 	h := &testHandler{t}
-	route := server.RegisterHandler(path, h)
+	mux := http.NewServeMux()
+
+	t.Logf("Attempting initial handler registration at path [%v]\n", path)
+
+	route := server.RegisterHandler(path, h, mux)
 
 	t.Logf("Handler registered for route [%v]\n", route)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 

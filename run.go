@@ -38,7 +38,7 @@ type Error struct {
 }
 
 // Starts up server
-func start(certs *[]tls.Certificate, listener net.Listener, internalError chan error) {
+func start(certs *[]tls.Certificate, listener net.Listener, mux *http.ServeMux, internalError chan error) {
 	c := *certs
 	var err error
 	if len(c) > 0 {
@@ -46,9 +46,9 @@ func start(certs *[]tls.Certificate, listener net.Listener, internalError chan e
 			Certificates: c,
 		}
 		listener = tls.NewListener(listener, tlsConfig)
-		err = http.ServeTLS(listener, http.DefaultServeMux, "", "")
+		err = http.ServeTLS(listener, mux, "", "")
 	} else {
-		err = http.Serve(listener, http.DefaultServeMux)
+		err = http.Serve(listener, mux)
 	}
 
 	if err != nil {
@@ -91,7 +91,7 @@ func await(ctx context.Context, listener net.Listener, internalError chan error,
 // the returned `reportedError` channel
 //
 // Fatal errors will be sent to the returned channel and the server will shutdown
-func Run(ctx context.Context, certs *[]tls.Certificate, portEnvKey string) (address string, reportedError chan Error) {
+func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, portEnvKey string) (address string, reportedError chan Error) {
 	internalError := make(chan error, 0)
 	reportedError = make(chan Error, 1)
 
@@ -101,6 +101,10 @@ func Run(ctx context.Context, certs *[]tls.Certificate, portEnvKey string) (addr
 	}
 	address = fmt.Sprintf("%v:%v", localHost, port)
 
+	if mux == nil {
+		mux = http.DefaultServeMux
+	}
+
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		reportedError <- Error{err, nil}
@@ -108,7 +112,7 @@ func Run(ctx context.Context, certs *[]tls.Certificate, portEnvKey string) (addr
 		return
 	}
 
-	go start(certs, listener, internalError)
+	go start(certs, listener, mux, internalError)
 	go await(ctx, listener, internalError, reportedError)
 	return
 }
