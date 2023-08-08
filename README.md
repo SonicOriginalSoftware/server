@@ -1,15 +1,13 @@
 # server
 
-## Additional Subdomains
-
 Use any `http.Handler` implementation of your choice. Register the handler for a given path using the `server.RegisterHandler` function.
 
 Check out these premade handlers to get you going!
 
-- [web-app](https://github.com/SonicOriginalSoftware/server-routes-app)
-- [git server](https://github.com/SonicOriginalSoftware/server-routes-git)
-- [grpc server](https://github.com/SonicOriginalSoftware/server-routes-grpc)
-- [graphql endpoint](https://github.com/SonicOriginalSoftware/server-routes-graphql)
+- [http server](https://git.sonicoriginal.software/server-routes-app)
+- [git server](https://git.sonicoriginal.software/server-routes-git)
+- [grpc server](https://git.sonicoriginal.software/server-routes-grpc)
+- [graphql endpoint](https://git.sonicoriginal.software/server-routes-graphql)
 
 # Running and Stopping
 
@@ -56,9 +54,11 @@ func main() {
   // certs = []tls.Certificate{cert}
 
   ctx, cancelContext := context.WithCancel(context.Background())
-
 	address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
 
+  // Do other stuff while your server runs
+
+  // Wait for your server to close (through a signal or internal error)
 	serverError := <-serverErrorChannel
 	if serverError.Close != nil {
     // Handle closing server error
