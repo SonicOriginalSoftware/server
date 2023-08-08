@@ -6,11 +6,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
 
-	logger "git.sonicoriginal.software/logger"
-	"git.sonicoriginal.software/server/v2"
+	logger "git.sonicoriginal.software/logger.git"
+	"git.sonicoriginal.software/server.git/v2"
 )
 
 const portEnvKey = "TEST_PORT"
@@ -18,6 +19,20 @@ const portEnvKey = "TEST_PORT"
 var certs []tls.Certificate
 
 var testLogger = logger.New("test", logger.DefaultSeverity, os.Stdout, os.Stderr)
+
+type testHandler struct{}
+
+func (handler *testHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	ok := []byte("hello")
+
+	written, err := writer.Write(ok)
+	if err != nil {
+
+	} else if written != len(ok) {
+		// FIXME
+		// testLogger.Error()
+	}
+}
 
 func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expectedErrorValue error) {
 	serverError := <-serverErrorChannel

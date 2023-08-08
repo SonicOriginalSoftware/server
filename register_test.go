@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"git.sonicoriginal.software/logger"
-	"git.sonicoriginal.software/server/v2"
+	logger "git.sonicoriginal.software/logger.git"
+	"git.sonicoriginal.software/server.git/v2"
 )
 
 type handler struct {
