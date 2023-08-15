@@ -26,9 +26,9 @@ const (
 
 var (
 	// ErrContextCancelled denotes when a server run returns because its context is cancelled
-	ErrContextCancelled error = fmt.Errorf(ServerContextCancelled)
+	ErrContextCancelled = fmt.Errorf(ServerContextCancelled)
 	// ErrReceivedInterrupt denotes when a server run returns because it received an interrupt signal
-	ErrReceivedInterrupt error = fmt.Errorf(ServerReceivedInterrupt)
+	ErrReceivedInterrupt = fmt.Errorf(ServerReceivedInterrupt)
 )
 
 // Error contains the errors applicable from running and stopping a server
