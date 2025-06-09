@@ -1,6 +1,7 @@
 # server
 
-Use any `http.Handler` implementation of your choice. Register the handler for a given path using the `server.RegisterHandler` function.
+Use any `http.Handler` implementation of your choice. Register the handler for a given path using
+the `server.RegisterHandler` function.
 
 Check out these premade handlers to get you going!
 
@@ -11,13 +12,16 @@ Check out these premade handlers to get you going!
 
 # Running and Stopping
 
-To stop the server send the program an `SIGINT` or `SIGKILL` - either natively through another process or with a `Ctrl-C`.
+To stop the server send the program an `SIGINT` or `SIGKILL` - either natively through another
+process or with a `Ctrl-C`.
 
-Stopping the server is not "graceful" - it does not await any open connections and will likely attempt to close down IO/handles without consideration of consumers waiting their results.
+Stopping the server is not "graceful" - it does not await any open connections and will likely
+attempt to close down IO/handles without consideration of consumers waiting their results.
 
 # HTTP/2 and Certs
 
-Deploy production-grade cert files (backed by a trusted CA) to the same machine as the server binary.
+Deploy production-grade cert files (backed by a trusted CA) to the same machine as the server
+binary.
 
 Load them in and pass them to the `server.Run` function.
 
@@ -25,7 +29,8 @@ Load them in and pass them to the `server.Run` function.
 
 # Consuming
 
-This is a _very_ high-level server library. Using it requires the import and use of a single `Run` function:
+This is a _very_ high-level server library. Using it requires the import and use of a single `Run`
+function:
 
 ```go
 import (
@@ -33,43 +38,45 @@ import (
   "crypto/tls"
   "os"
 
-  "git.sonicoriginal.software/server.git/v2"
+  "git.sonicoriginal.software/server/v2"
+)
+
+const (
+	portEnvKey = "APP_PORT"
+  enableHeartBeat = true
+)
+
+var (
+	certs               []tls.Certificate
+	mux                 = http.NewServeMux()
+	ctx, cancelFunction = context.WithCancel(context.Background())
 )
 
 func main() {
-  const portEnvKey = "APP_PORT"
-  os.Setenv(portEnvKey, "4430") // Default
+	defer cancelFunction()
 
   // TODO Import your desired handlers and register them here
   // e.g. if importing the 'app' handler, use
   // _ = app.New()
-
-  var certs []tls.Certificate
 
   // TODO Load your cert and key or skip and just use
   // cert, err := tls.X509KeyPair(cert, key)
   // if err != nil {
   //   // Handle a certificate server failure for your app here
   // }
-  // certs = []tls.Certificate{cert}
 
-  ctx, cancelContext := context.WithCancel(context.Background())
-  address, serverErrorChannel := server.Run(ctx, &certs, portEnvKey)
+	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
+	logger.DefaultLogger.Info("Serving on [%v]\n", address)
 
-  // Do other stuff while your server runs
+	serverError := <-serverErrorChannel
+	contextError := serverError.Context.Error()
 
-  // Wait for your server to close (through a signal or internal error)
-  serverError := <-serverErrorChannel
-  if serverError.Close != nil {
-    // Handle closing server error
-  }
+	if serverError.Close != nil {
+		logger.DefaultLogger.Error("Error closing server: %v", serverError.Close.Error())
+	}
 
-  contextError := serverError.Context.Error()
-
-  if serverError.Context.Error() != nil {
-    // Handle server failing unexpectedly
-  }
-
-  cancelCtx()
+	if contextError != server.ErrContextCancelled.Error() {
+		logger.DefaultLogger.Error("Server failed unexpectedly: %v", contextError)
+	}
 }
 ```

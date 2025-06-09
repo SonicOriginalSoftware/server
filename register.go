@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-// RegisterHandler registers a handler for a path with the default serve mux
+// RegisterHandler registers a handler for a path with a mux
+//
+// Will use the default mux if none is provided
 func RegisterHandler(path string, handler http.Handler, mux *http.ServeMux) (route string) {
 	if !strings.HasPrefix(path, "/") {
 		path = fmt.Sprintf("/%v", path)

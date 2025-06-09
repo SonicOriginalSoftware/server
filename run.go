@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
+	"git.sonicoriginal.software/logger/v2"
 )
 
 const (
@@ -91,7 +93,7 @@ func await(ctx context.Context, listener net.Listener, internalError chan error,
 // the returned `reportedError` channel
 //
 // Fatal errors will be sent to the returned channel and the server will shutdown
-func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, portEnvKey string) (address string, reportedError chan Error) {
+func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, portEnvKey string, enableHeartBeat bool) (address string, reportedError chan Error) {
 	internalError := make(chan error, 0)
 	reportedError = make(chan Error, 1)
 
@@ -110,6 +112,11 @@ func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, port
 		reportedError <- Error{err, nil}
 		close(reportedError)
 		return
+	}
+
+	if enableHeartBeat {
+		healthRoute := RegisterHeartBeat(mux)
+		logger.DefaultLogger.Info("Handler registered for route [%v]\n", healthRoute)
 	}
 
 	go start(certs, listener, mux, internalError)
