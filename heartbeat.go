@@ -3,6 +3,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -46,7 +47,7 @@ func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data{Status: "ok", Commit: gitCommit})
 }
 
-// RegisterHeartBeat registers the HeartBeat Handler
+// RegisterHeartBeat handler
 func RegisterHeartBeat(mux *http.ServeMux) (route string) {
 	logger := logger.New(
 		heartBeatName,
@@ -55,5 +56,9 @@ func RegisterHeartBeat(mux *http.ServeMux) (route string) {
 		os.Stderr,
 	)
 
-	return RegisterHandler(heartBeatName, &heartBeat{logger}, mux)
+	route = fmt.Sprintf("/%s", heartBeatName)
+	handler := &heartBeat{logger}
+	mux.Handle(route, handler)
+
+	return
 }

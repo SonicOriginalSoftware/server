@@ -104,22 +104,22 @@ func TestTLSServer(t *testing.T) {
 }
 
 func TestRoundTrip(t *testing.T) {
-	const path = ""
+	const path = "/"
 	h := &testHandler{t}
 	mux := http.NewServeMux()
 
 	t.Logf("Attempting initial handler registration at path [%v]\n", path)
 
-	route := server.RegisterHandler(path, h, mux)
+	mux.Handle(path, h)
 
-	t.Logf("Handler registered for route [%v]\n", route)
+	t.Logf("Handler registered for route [%v]\n", path)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
 	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey, false)
 
 	t.Logf("Serving on [%v]\n", address)
 
-	url := fmt.Sprintf("http://%v%v", address, route)
+	url := fmt.Sprintf("http://%v%v", address, path)
 
 	t.Logf("Requesting [%v]\n", url)
 
