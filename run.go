@@ -11,15 +11,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 
 	"git.sonicoriginal.software/logger/v2"
 )
 
 const (
-	// localHost is the name of the localhost
-	localHost = "localhost"
-	// defaultPort is the default port used for service
-	defaultPort = "4430"
+	// LocalHost is the name of the localhost
+	LocalHost = "localhost"
+	// DefaultPort is the default port used for service
+	DefaultPort = "4430"
+	// HeartBeatName is the name of the heartbeat service
+	HeartBeatName = "heartbeat"
 	// ServerContextCancelled denotes when a server run returns because its context is cancelled
 	ServerContextCancelled = "Server context cancelled"
 	// ServerReceivedInterrupt denotes when a server run returns because its context is cancelled
@@ -27,9 +30,10 @@ const (
 )
 
 var (
-	// ErrContextCancelled denotes when a server run returns because its context is cancelled
+	commit string // git commit hash, set at build time
+	// ErrContextCancelled - a server returns because its context is cancelled
 	ErrContextCancelled = fmt.Errorf(ServerContextCancelled)
-	// ErrReceivedInterrupt denotes when a server run returns because it received an interrupt signal
+	// ErrReceivedInterrupt - a server returns because it received an interrupt signal
 	ErrReceivedInterrupt = fmt.Errorf(ServerReceivedInterrupt)
 )
 
@@ -40,7 +44,12 @@ type Error struct {
 }
 
 // Starts up server
-func start(certs *[]tls.Certificate, listener net.Listener, mux *http.ServeMux, internalError chan error) {
+func start(
+	certs *[]tls.Certificate,
+	listener net.Listener,
+	mux *http.ServeMux,
+	internalError chan error,
+) {
 	c := *certs
 	var err error
 	if len(c) > 0 {
@@ -69,7 +78,12 @@ func start(certs *[]tls.Certificate, listener net.Listener, mux *http.ServeMux, 
 //  1. The context is cancelled
 //  2. An OS SIGINT is sent
 //  3. The servers stop (intentional or through fatal error)
-func await(ctx context.Context, listener net.Listener, internalError chan error, reportedError chan Error) {
+func await(
+	ctx context.Context,
+	listener net.Listener,
+	internalError chan error,
+	reportedError chan Error,
+) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -89,19 +103,25 @@ func await(ctx context.Context, listener net.Listener, internalError chan error,
 
 // Run executes the main server loop in a goroutine
 //
-// It allows consumer cancellation through the context and server-side cancellation notification via
-// the returned `reportedError` channel
+// It allows consumer cancellation through the context and server-side cancellation
+// notification via the returned `reportedError` channel
 //
 // Fatal errors will be sent to the returned channel and the server will shutdown
-func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, portEnvKey string, enableHeartBeat bool) (address string, reportedError chan Error) {
+func Run(
+	ctx context.Context,
+	certs *[]tls.Certificate,
+	mux *http.ServeMux,
+	portEnvKey string,
+	enableHeartBeat bool,
+) (address string, reportedError chan Error) {
 	internalError := make(chan error, 0)
 	reportedError = make(chan Error, 1)
 
 	port, set := os.LookupEnv(portEnvKey)
 	if !set {
-		port = defaultPort
+		port = DefaultPort
 	}
-	address = fmt.Sprintf("%v:%v", localHost, port)
+	address = fmt.Sprintf("%v:%v", LocalHost, port)
 
 	if mux == nil {
 		mux = http.DefaultServeMux
@@ -115,8 +135,27 @@ func Run(ctx context.Context, certs *[]tls.Certificate, mux *http.ServeMux, port
 	}
 
 	if enableHeartBeat {
-		healthRoute := RegisterHeartBeat(mux)
-		logger.DefaultLogger.Info("Handler registered for route [%v]\n", healthRoute)
+		if info, ok := debug.ReadBuildInfo(); ok {
+			for _, setting := range info.Settings {
+				switch setting.Key {
+				case "vcs.revision":
+					commit = setting.Value
+				}
+			}
+		} else {
+			logger.DefaultLogger.Warn("Unable to read build info\n")
+		}
+		heartBeatLogger := logger.New(
+			HeartBeatName,
+			logger.DefaultSeverity,
+			os.Stdout,
+			os.Stderr,
+		)
+
+		route := fmt.Sprintf("/%s", HeartBeatName)
+		handler := &heartBeat{heartBeatLogger, commit}
+		mux.Handle(route, handler)
+		heartBeatLogger.Info("Handler registered for route [%v]\n", route)
 	}
 
 	go start(certs, listener, mux, internalError)
