@@ -11,9 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/debug"
-
-	"git.sonicoriginal.software/logger/v2"
 )
 
 const (
@@ -135,27 +132,7 @@ func Run(
 	}
 
 	if enableHeartBeat {
-		if info, ok := debug.ReadBuildInfo(); ok {
-			for _, setting := range info.Settings {
-				switch setting.Key {
-				case "vcs.revision":
-					commit = setting.Value
-				}
-			}
-		} else {
-			logger.DefaultLogger.Warn("Unable to read build info\n")
-		}
-		heartBeatLogger := logger.New(
-			HeartBeatName,
-			logger.DefaultSeverity,
-			os.Stdout,
-			os.Stderr,
-		)
-
-		route := fmt.Sprintf("/%s", HeartBeatName)
-		handler := &heartBeat{heartBeatLogger, commit}
-		mux.Handle(route, handler)
-		heartBeatLogger.Info("Handler registered for route [%v]\n", route)
+		RegisterHeartBeat(mux)
 	}
 
 	go start(certs, listener, mux, internalError)
