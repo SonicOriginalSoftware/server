@@ -66,17 +66,17 @@ func main() {
   // }
 
 	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
-	logger.DefaultLogger.Info("Serving on [%v]\n", address)
+	logger.DefaultLogger.Info("Serving on ", address)
 
 	serverError := <-serverErrorChannel
 	contextError := serverError.Context.Error()
 
 	if serverError.Close != nil {
-		logger.DefaultLogger.Error("Error closing server: %v", serverError.Close.Error())
+		logger.DefaultLogger.Error("Error closing server: ", serverError.Close.Error())
 	}
 
 	if contextError != server.ErrContextCancelled.Error() {
-		logger.DefaultLogger.Error("Server failed unexpectedly: %v", contextError)
+		logger.DefaultLogger.Error("Server failed unexpectedly: ", contextError)
 	}
 }
 ```

@@ -22,7 +22,7 @@ type data struct {
 }
 
 func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler.logger.Info("%v %v\n", r.Method, r.URL.Path)
+	handler.logger.Info(r.Method, " ", r.URL.Path)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit})
@@ -39,7 +39,7 @@ func RegisterHeartBeat(mux *http.ServeMux) {
 			}
 		}
 	} else {
-		logger.DefaultLogger.Warn("Unable to read build info\n")
+		logger.DefaultLogger.Warn("Unable to read build info")
 	}
 
 	beat := logger.New(
@@ -53,7 +53,7 @@ func RegisterHeartBeat(mux *http.ServeMux) {
 	handler := &heartBeat{beat, commit}
 	mux.Handle(route, handler)
 
-	beat.Info("Handler registered for route [%v]\n", route)
+	beat.Info("Handler registered for route: ", route)
 
 	return
 }
