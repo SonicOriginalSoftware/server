@@ -4,15 +4,14 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime/debug"
-
-	"git.sonicoriginal.software/logger/v2"
 )
 
 type heartBeat struct {
-	logger logger.Log
+	logger *slog.Logger
 	commit string
 }
 
@@ -22,14 +21,22 @@ type data struct {
 }
 
 func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler.logger.Info(r.Method, " ", r.URL.Path)
+	LogRequest(r, handler.logger, r.URL.Query())
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit})
+	if err := json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit}); err != nil {
+		handler.logger.Error(fmt.Sprintf("Failed to encode response: %v", err))
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 // RegisterHeartBeat handler
-func RegisterHeartBeat(mux *http.ServeMux) {
+func RegisterHeartBeat(mux *http.ServeMux, beat *slog.Logger) {
+	if beat == nil {
+		opts := &slog.HandlerOptions{}
+		beat = slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	}
+
 	commit := "unknown"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
@@ -39,21 +46,14 @@ func RegisterHeartBeat(mux *http.ServeMux) {
 			}
 		}
 	} else {
-		logger.DefaultLogger.Warn("Unable to read build info")
+		beat.Warn("Unable to read build info")
 	}
-
-	beat := logger.New(
-		HeartBeatName,
-		logger.DefaultSeverity,
-		os.Stdout,
-		os.Stderr,
-	)
 
 	route := fmt.Sprintf("/%s", HeartBeatName)
 	handler := &heartBeat{beat, commit}
 	mux.Handle(route, handler)
 
-	beat.Info("Handler registered for route: ", route)
+	beat.Info(fmt.Sprintf("Handler registered for route: %s", route))
 
 	return
 }

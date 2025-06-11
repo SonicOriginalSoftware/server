@@ -109,7 +109,6 @@ func Run(
 	certs *[]tls.Certificate,
 	mux *http.ServeMux,
 	portEnvKey string,
-	enableHeartBeat bool,
 ) (address string, reportedError chan Error) {
 	internalError := make(chan error, 0)
 	reportedError = make(chan Error, 1)
@@ -129,10 +128,6 @@ func Run(
 		reportedError <- Error{err, nil}
 		close(reportedError)
 		return
-	}
-
-	if enableHeartBeat {
-		RegisterHeartBeat(mux)
 	}
 
 	go start(certs, listener, mux, internalError)

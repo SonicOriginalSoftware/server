@@ -50,7 +50,7 @@ func verifyServerError(t *testing.T, serverErrorChannel chan server.Error, expec
 
 func TestRunCancel(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey, false)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 
@@ -61,7 +61,7 @@ func TestRunCancel(t *testing.T) {
 
 func TestRunInterrupt(t *testing.T) {
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey, false)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 	t.Logf("Serving on [%v]\n", address)
 
 	pid := os.Getpid()
@@ -87,7 +87,7 @@ func TestRunInvalidPort(t *testing.T) {
 	t.Setenv(portEnvKey, invalidPort)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey, false)
+	address, serverErrorChannel := server.Run(ctx, &certs, nil, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 
@@ -115,7 +115,7 @@ func TestRoundTrip(t *testing.T) {
 	t.Logf("Handler registered for route [%v]\n", path)
 
 	ctx, cancelFunction := context.WithCancel(context.Background())
-	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey, false)
+	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
 
 	t.Logf("Serving on [%v]\n", address)
 
