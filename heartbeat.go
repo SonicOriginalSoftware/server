@@ -7,12 +7,13 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+
+	"git.sonicoriginal.software/server/v2/logging"
 )
 
 type heartBeat struct {
-	logger    *slog.Logger
-	errLogger *slog.Logger
-	commit    string
+	logger *slog.Logger
+	commit string
 }
 
 type data struct {
@@ -25,27 +26,23 @@ func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit}); err != nil {
-		handler.errLogger.Error(fmt.Sprintf("Failed to encode response: %v", err))
+		handler.logger.Error(fmt.Sprintf("Failed to encode response: %v", err))
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
 // RegisterHeartBeat handler
-func RegisterHeartBeat(mux *http.ServeMux, parentJSONLogger, parentJSONErrorLogger *slog.Logger) {
+func RegisterHeartBeat(mux *http.ServeMux, parentJSONLogger *slog.Logger) {
 	if parentJSONLogger == nil {
-		parentJSONLogger = JSONLogger
-	}
-	if parentJSONErrorLogger == nil {
-		parentJSONErrorLogger = JSONErrorLogger
+		parentJSONLogger = logging.JSONLogger
 	}
 
 	logger := parentJSONLogger.With(slog.String("handler", HeartBeatName))
-	errorLogger := parentJSONErrorLogger.With(slog.String("handler", HeartBeatName))
 
 	commit := "unknown"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
-			TextLogger.Debug(
+			logging.TextLogger.Debug(
 				"Build info",
 				slog.String("key", setting.Key),
 				slog.String("value", setting.Value),
@@ -56,12 +53,12 @@ func RegisterHeartBeat(mux *http.ServeMux, parentJSONLogger, parentJSONErrorLogg
 			}
 		}
 	} else {
-		TextLogger.Warn("Unable to read build info")
+		logging.TextLogger.Warn("Unable to read build info")
 	}
 
 	route := fmt.Sprintf("/%s", HeartBeatName)
-	handler := &heartBeat{logger, errorLogger, commit}
+	handler := &heartBeat{logger, commit}
 	mux.Handle(route, handler)
 
-	RegisterLogger.Info("route", slog.String("path", route))
+	logging.RegisterLogger.Info("route", slog.String("path", route))
 }

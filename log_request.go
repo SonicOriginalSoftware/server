@@ -3,6 +3,8 @@ package server
 import (
 	"log/slog"
 	"net/http"
+
+	"git.sonicoriginal.software/server/v2/logging"
 )
 
 // LogRequest logs the details of an HTTP request
@@ -13,7 +15,7 @@ func LogRequest(r *http.Request, logger *slog.Logger) {
 	query := r.URL.Query()
 
 	if logger == nil {
-		logger = JSONLogger
+		logger = logging.JSONLogger
 	}
 
 	logger.Info(
