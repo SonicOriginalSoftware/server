@@ -1,5 +1,4 @@
 //revive:disable:package-comments
-
 package server
 
 import (

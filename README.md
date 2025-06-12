@@ -55,28 +55,36 @@ var (
 func main() {
 	defer cancelFunction()
 
-  // TODO Import your desired handlers and register them here
-  // e.g. if importing the 'app' handler, use
-  // _ = app.New()
-
   // TODO Load your cert and key or skip and just use
   // cert, err := tls.X509KeyPair(cert, key)
   // if err != nil {
   //   // Handle a certificate server failure for your app here
   // }
 
+	if enableHeartBeat {
+		server.RegisterHeartBeat(mux, nil, nil)
+	}
+
+	// For examples of how to register other Handlers, see server.RegisterHeartBeat
+
 	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
-	logger.DefaultLogger.Info("Serving on ", address)
+	server.TextLogger.Info("Serving", slog.String("address", address))
 
 	serverError := <-serverErrorChannel
 	contextError := serverError.Context.Error()
 
 	if serverError.Close != nil {
-		logger.DefaultLogger.Error("Error closing server: ", serverError.Close.Error())
+		server.ErrorLogger.Error(
+			"Error closing server",
+			slog.String("error", serverError.Close.Error()),
+		)
 	}
 
 	if contextError != server.ErrContextCancelled.Error() {
-		logger.DefaultLogger.Error("Server failed unexpectedly: ", contextError)
+		server.ErrorLogger.Error(
+			"Server failed unexpectedly",
+			slog.String("error", contextError),
+		)
 	}
 }
 ```
