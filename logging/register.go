@@ -5,7 +5,6 @@ import "log/slog"
 
 var (
 	// RegisterLogger is for logging registration events, such as when a handler is registered
-	RegisterLogger = slog.New(NewTextHandler(defaultLevel, "")).With(
-		slog.String("handler", "registrar"),
-	)
+	RegisterLogger = slog.New(NewTextHandler(defaultLevel, "")).
+		With(slog.String("handler", "registrar"))
 )
