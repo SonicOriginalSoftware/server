@@ -5,6 +5,8 @@ import (
 	"context"
 	"log/slog"
 	"os"
+
+	server_context "git.sonicoriginal.software/server/v2/context"
 )
 
 var (
@@ -47,8 +49,8 @@ func (h *JSONHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle processes the slog.Record
 func (h *JSONHandler) Handle(ctx context.Context, r slog.Record) error {
-	if id, ok := ctx.Value(invocationIDKey).(string); ok {
-		r.AddAttrs(slog.String(string(invocationIDKey), id))
+	if id, ok := ctx.Value(server_context.ID).(string); ok {
+		r.AddAttrs(slog.String(string(server_context.ID), id))
 	}
 
 	switch {

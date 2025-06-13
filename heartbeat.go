@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	server_context "git.sonicoriginal.software/server/v2/context"
 	"git.sonicoriginal.software/server/v2/logging"
 )
 
@@ -27,7 +28,7 @@ type data struct {
 
 func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	ctx = logging.ContextWithInvocationID(ctx)
+	ctx = server_context.WithUUID(ctx)
 	LogRequest(ctx, r, nil)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -39,6 +40,7 @@ func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RegisterHeartBeat handler
 func RegisterHeartBeat(ctx context.Context, mux *http.ServeMux, logger logging.SLogger) {
+	ctx = server_context.WithID(ctx, HeartBeatName)
 	if logger == nil {
 		heartBeatLogger = logger
 	}
@@ -46,24 +48,24 @@ func RegisterHeartBeat(ctx context.Context, mux *http.ServeMux, logger logging.S
 	commit := "unknown"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
-			logging.TextLogger.DebugContext(
+			logging.RegisterLogger.DebugContext(
 				ctx,
 				"Build info",
 				slog.String("key", setting.Key),
 				slog.String("value", setting.Value),
 			)
-			switch setting.Key {
-			case "vcs.revision":
+
+			if setting.Key == "vcs.revision" {
 				commit = setting.Value
 			}
 		}
 	} else {
-		logging.TextLogger.WarnContext(ctx, "Unable to read build info")
+		logging.RegisterLogger.WarnContext(ctx, "Unable to read build info")
 	}
 
 	route := fmt.Sprintf("/%s", HeartBeatName)
 	handler := &heartBeat{commit}
 	mux.Handle(route, handler)
 
-	logging.RegisterLogger.InfoContext(ctx, "route", slog.String("path", route))
+	logging.RegisterLogger.InfoContext(ctx, "Registered", slog.String("path", route))
 }

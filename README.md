@@ -39,6 +39,7 @@ import (
   "os"
 
   "git.sonicoriginal.software/server/v2"
+	"git.sonicoriginal.software/server/v2/logging"
 )
 
 const (
@@ -68,23 +69,26 @@ func main() {
 	// For examples of how to register other Handlers, see server.RegisterHeartBeat
 
 	address, serverErrorChannel := server.Run(ctx, &certs, mux, portEnvKey)
-	server.TextLogger.Info("Serving", slog.String("address", address))
+	logging.TextLogger.InfoContext(ctx, "Serving", slog.String("address", address))
 
 	serverError := <-serverErrorChannel
-	contextError := serverError.Context.Error()
 
 	if serverError.Close != nil {
-		server.ErrorLogger.Error(
+		logging.TextLogger.ErrorContext(
+			ctx,
 			"Error closing server",
 			slog.String("error", serverError.Close.Error()),
 		)
 	}
 
-	if contextError != server.ErrContextCancelled.Error() {
-		server.ErrorLogger.Error(
-			"Server failed unexpectedly",
-			slog.String("error", contextError),
-		)
+	if contextError := serverError.Context; contextError != nil {
+		if errors.Is(contextError, server.ErrContextCancelled) {
+			logging.TextLogger.ErrorContext(
+				ctx,
+				"Server failed unexpectedly",
+				slog.String("error", contextError.Error()),
+			)
+		}
 	}
 }
 ```

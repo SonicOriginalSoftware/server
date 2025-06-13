@@ -19,10 +19,10 @@ type TextHandler struct {
 }
 
 // NewTextHandler creates a new TextHandler
-func NewTextHandler(level slog.Leveler, label string) *TextHandler {
+func NewTextHandler(level slog.Leveler, prefix string) *TextHandler {
 	return &TextHandler{
-		stdoutHandler: newBaseHandler(os.Stdout, level, label),
-		stderrHandler: newBaseHandler(os.Stderr, level, label),
+		stdoutHandler: newBaseHandler(os.Stdout, level, prefix),
+		stderrHandler: newBaseHandler(os.Stderr, level, prefix),
 	}
 }
 
