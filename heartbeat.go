@@ -2,6 +2,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -11,8 +12,11 @@ import (
 	"git.sonicoriginal.software/server/v2/logging"
 )
 
+var (
+	heartBeatLogger logging.SLogger = logging.JSONLogger.With(slog.String("handler", HeartBeatName))
+)
+
 type heartBeat struct {
-	logger *slog.Logger
 	commit string
 }
 
@@ -22,27 +26,28 @@ type data struct {
 }
 
 func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	LogRequest(r, handler.logger)
+	ctx := r.Context()
+	ctx = logging.ContextWithInvocationID(ctx)
+	LogRequest(ctx, r, nil)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit}); err != nil {
-		handler.logger.Error(fmt.Sprintf("Failed to encode response: %v", err))
+		heartBeatLogger.ErrorContext(ctx, fmt.Sprintf("Failed to encode response: %v", err))
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
 // RegisterHeartBeat handler
-func RegisterHeartBeat(mux *http.ServeMux, parentJSONLogger *slog.Logger) {
-	if parentJSONLogger == nil {
-		parentJSONLogger = logging.JSONLogger
+func RegisterHeartBeat(ctx context.Context, mux *http.ServeMux, logger logging.SLogger) {
+	if logger == nil {
+		heartBeatLogger = logger
 	}
-
-	logger := parentJSONLogger.With(slog.String("handler", HeartBeatName))
 
 	commit := "unknown"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
-			logging.TextLogger.Debug(
+			logging.TextLogger.DebugContext(
+				ctx,
 				"Build info",
 				slog.String("key", setting.Key),
 				slog.String("value", setting.Value),
@@ -53,12 +58,12 @@ func RegisterHeartBeat(mux *http.ServeMux, parentJSONLogger *slog.Logger) {
 			}
 		}
 	} else {
-		logging.TextLogger.Warn("Unable to read build info")
+		logging.TextLogger.WarnContext(ctx, "Unable to read build info")
 	}
 
 	route := fmt.Sprintf("/%s", HeartBeatName)
-	handler := &heartBeat{logger, commit}
+	handler := &heartBeat{commit}
 	mux.Handle(route, handler)
 
-	logging.RegisterLogger.Info("route", slog.String("path", route))
+	logging.RegisterLogger.InfoContext(ctx, "route", slog.String("path", route))
 }

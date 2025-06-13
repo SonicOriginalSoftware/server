@@ -26,7 +26,6 @@ const (
 )
 
 var (
-	commit string // git commit hash, set at build time
 	// ErrContextCancelled - a server returns because its context is cancelled
 	ErrContextCancelled = fmt.Errorf(ServerContextCancelled)
 	// ErrReceivedInterrupt - a server returns because it received an interrupt signal

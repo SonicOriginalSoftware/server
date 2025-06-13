@@ -45,8 +45,12 @@ func (h *JSONHandler) Enabled(ctx context.Context, l slog.Level) bool {
 		h.debugHandler.Enabled(ctx, l)
 }
 
-// Handle processes the slog.Record and writes to stdout or stderr based on the log level
+// Handle processes the slog.Record
 func (h *JSONHandler) Handle(ctx context.Context, r slog.Record) error {
+	if id, ok := ctx.Value(invocationIDKey).(string); ok {
+		r.AddAttrs(slog.String(string(invocationIDKey), id))
+	}
+
 	switch {
 	case r.Level <= slog.LevelDebug:
 		return h.debugHandler.Handle(ctx, r)
