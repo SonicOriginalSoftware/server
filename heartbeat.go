@@ -22,8 +22,26 @@ type heartBeat struct {
 }
 
 type data struct {
-	Status string `json:"status"`
-	Commit string `json:"commit"`
+	Error  string `json:"error,omitempty"`
+	Status string `json:"status,omitempty"`
+	Commit string `json:"commit,omitempty"`
+}
+
+func options(ctx context.Context, w http.ResponseWriter) {
+	if w == nil {
+		heartBeatLogger.ErrorContext(ctx, "Response writer is nil")
+		return
+	}
+
+	w.Header().Del("Content-Type")
+	w.Header().Set("Allow", "GET, OPTIONS")
+	w.WriteHeader(http.StatusNoContent)
+
+	if _, err := w.Write(nil); err != nil {
+		heartBeatLogger.ErrorContext(ctx, "Failed to write response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +50,23 @@ func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	LogRequest(ctx, r, nil)
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data{Status: "ok", Commit: handler.commit}); err != nil {
+
+	d := data{}
+
+	switch r.Method {
+	case http.MethodOptions:
+		options(ctx, w)
+		return
+	case http.MethodGet:
+		d.Status = "ok"
+		d.Commit = handler.commit
+	default:
+		heartBeatLogger.ErrorContext(ctx, ErrInvalidMethod.Error(), slog.String("method", r.Method))
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		d.Error = fmt.Errorf("%w %s, only GET is allowed", ErrInvalidMethod, r.Method).Error()
+	}
+
+	if err := json.NewEncoder(w).Encode(d); err != nil {
 		heartBeatLogger.ErrorContext(ctx, fmt.Sprintf("Failed to encode response: %v", err))
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
@@ -41,11 +75,11 @@ func (handler *heartBeat) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // RegisterHeartBeat handler
 func RegisterHeartBeat(ctx context.Context, mux *http.ServeMux, logger logging.SLogger) {
 	ctx = server_context.WithID(ctx, HeartBeatName)
-	if logger == nil {
+	if logger != nil {
 		heartBeatLogger = logger
 	}
 
-	commit := "unknown"
+	commit := ""
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
 			logging.RegisterLogger.DebugContext(
