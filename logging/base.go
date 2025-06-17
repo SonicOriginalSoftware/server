@@ -11,14 +11,6 @@ import (
 	server_context "git.sonicoriginal.software/server/v2/context"
 )
 
-func init() {
-	defaultLevel.Set(slog.LevelInfo)
-}
-
-var (
-	defaultLevel = new(slog.LevelVar)
-)
-
 type baseTexthandler struct {
 	w      io.Writer
 	level  slog.Leveler
